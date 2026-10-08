@@ -16,20 +16,32 @@
 <body class="employee">
   <canvas class="fire-canvas" id="fireCanvas" aria-hidden="true"></canvas>
 
-  <header class="hero">
-    <div class="hero-ravan ravan idle" id="heroRavan"></div>
-    <h1 class="hero-title display"><span aria-hidden="true">🏹</span> <span class="gold-text">DIGITAL RAVAN BOX</span></h1>
-    <p class="hero-sub">“What will you let go of this Dussehra?”</p>
-    <p class="hero-tag">Write it. Drop it. Let it go.</p>
-    <a class="btn btn-gold hero-cta" href="#drop" id="ctaBtn">Drop your Ravan</a>
-  </header>
-
-  <main id="drop" class="drop-section" tabindex="-1">
-    <div class="sealed" id="sealedNotice" hidden>
-      <p class="sealed-icon" aria-hidden="true">🔒</p>
-      <h2>The Ravan Box is sealed</h2>
-      <p>Submissions are closed. See you at the ceremony — let it all go on Dussehra.</p>
+  <!-- SCREEN 1 · welcome -->
+  <section class="screen screen-welcome" id="screenWelcome" aria-labelledby="welcomeTitle">
+    <div class="hero">
+      <div class="hero-ravan ravan idle" id="heroRavan"></div>
+      <h1 class="hero-title display" id="welcomeTitle"><span aria-hidden="true">🏹</span> <span class="gold-text">DIGITAL RAVAN BOX</span></h1>
+      <p class="hero-sub">“What will you let go of this Dussehra?”</p>
+      <p class="hero-tag">Write it. Drop it. Let it go.</p>
+      <button type="button" class="btn btn-gold hero-cta" id="ctaBtn">Drop your Ravan</button>
+      <div class="sealed" id="sealedNotice" hidden>
+        <p class="sealed-icon" aria-hidden="true">🔒</p>
+        <h2>The Ravan Box is sealed</h2>
+        <p>Submissions are closed. See you at the ceremony — let it all go on Dussehra.</p>
+      </div>
     </div>
+    <footer class="site-foot">
+      <p><span id="eventDate">16 OCTOBER 2026</span> · <strong class="gold-text">VICTORY WITHIN</strong></p>
+    </footer>
+  </section>
+
+  <!-- SCREEN 2 · pick your Ravan -->
+  <section class="screen screen-pick" id="screenPick" aria-labelledby="pickTitle" hidden>
+    <header class="pick-bar">
+      <button type="button" class="back-btn" id="backBtn" aria-label="Back to start">←</button>
+      <h1 class="pick-title display" id="pickTitle"><span class="gold-text">PICK YOUR RAVAN</span></h1>
+      <span class="pick-bar-spacer" aria-hidden="true"></span>
+    </header>
 
     <form id="dropForm" class="drop-form" novalidate autocomplete="off">
       <fieldset class="cats">
@@ -48,19 +60,17 @@
 
       <p class="anon-note"><span aria-hidden="true">🔒</span> 100% anonymous. No name, email, phone or login — ever.</p>
 
-      <p class="form-error" id="formError" role="alert" hidden></p>
-      <button type="submit" class="btn drop-btn" id="dropBtn"><span aria-hidden="true">🔥</span> Drop it in the Ravan Box</button>
+      <div class="drop-dock">
+        <p class="form-error" id="formError" role="alert" hidden></p>
+        <button type="submit" class="btn drop-btn" id="dropBtn"><span aria-hidden="true">🔥</span> Drop it in the Ravan Box</button>
+      </div>
     </form>
-  </main>
+  </section>
 
-  <footer class="site-foot">
-    <p><span id="eventDate">16 OCTOBER 2026</span> · <strong class="gold-text">VICTORY WITHIN</strong></p>
-  </footer>
-
-  <!-- the drop moment: paper chit flies into Ravan's mouth -->
-  <div class="drop-stage" id="dropStage" hidden>
+  <!-- SCREEN 3 · the drop: paper chit flies into Ravan's mouth -->
+  <section class="screen screen-drop drop-stage" id="dropStage" aria-live="polite" hidden>
     <div class="stage-ravan ravan" id="stageRavan"></div>
-    <div class="stage-status" id="stageStatus" aria-live="polite">Folding your chit…</div>
+    <div class="stage-status" id="stageStatus">Folding your chit…</div>
     <div class="stage-done" id="stageDone" hidden>
       <h2 class="display"><span aria-hidden="true">🔥</span> <span class="gold-text">YOUR RAVAN IS IN THE BOX</span></h2>
       <p>“Let it go on Dussehra.”</p>
@@ -69,7 +79,7 @@
         <button type="button" class="btn btn-ghost btn-sm" id="againBtn">Drop another</button>
       </div>
     </div>
-  </div>
+  </section>
 
   <script src="js/config.js"></script>
   <script src="js/categories.js"></script>

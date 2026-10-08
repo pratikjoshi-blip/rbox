@@ -1,4 +1,5 @@
-/* Employee flow: pick a Ravan → (optional) message → drop it in the mouth. */
+/* Employee flow, one screen at a time:
+ *   1 welcome → 2 pick your Ravan (+ optional message) → 3 drop it in the mouth. */
 (function () {
   var cfg = window.RAVAN_CONFIG;
   var MAX = cfg.MESSAGE_MAX || 150;
@@ -13,6 +14,35 @@
   $('eventDate').textContent = cfg.EVENT_DATE_LABEL;
 
   var fire = new FireStage($('fireCanvas'));
+
+  // ---- screens ----
+  var SCREENS = { welcome: $('screenWelcome'), pick: $('screenPick'), drop: $('dropStage') };
+  var current = 'welcome';
+  function show(name, opts) {
+    opts = opts || {};
+    Object.keys(SCREENS).forEach(function (k) { SCREENS[k].hidden = k !== name; });
+    current = name;
+    window.scrollTo(0, 0);
+    // let the phone's back button go from "pick" to "welcome"
+    if (opts.push) history.pushState({ screen: name }, '', '#' + name);
+    else if (opts.replace) history.replaceState({ screen: name }, '', name === 'welcome' ? location.pathname + location.search : '#' + name);
+    var focusEl = { welcome: $('ctaBtn'), pick: $('pickTitle'), drop: $('stageStatus') }[name];
+    if (focusEl && opts.focus !== false) {
+      if (!focusEl.hasAttribute('tabindex') && focusEl.tagName !== 'BUTTON') focusEl.setAttribute('tabindex', '-1');
+      focusEl.focus({ preventScroll: true });
+    }
+  }
+  window.addEventListener('popstate', function () {
+    if (current === 'drop') return; // never interrupt the drop animation
+    show(location.hash === '#pick' && !sealed ? 'pick' : 'welcome');
+  });
+  var sealed = false;
+  $('ctaBtn').addEventListener('click', function () { if (!sealed) show('pick', { push: true }); });
+  $('backBtn').addEventListener('click', function () {
+    if (history.state && history.state.screen === 'pick') history.back();
+    else show('welcome', { replace: true });
+  });
+  show(location.hash === '#pick' ? 'pick' : 'welcome', { replace: true, focus: false });
 
   // ---- categories ----
   var grid = $('catGrid');
@@ -54,9 +84,10 @@
   // ---- is the box still open? ----
   RavanAPI.status().then(function (s) {
     if (s && s.accepting === false) {
-      form.hidden = true;
+      sealed = true;
+      $('ctaBtn').hidden = true;
       $('sealedNotice').hidden = false;
-      $('ctaBtn').textContent = 'The box is sealed';
+      if (current === 'pick') show('welcome', { replace: true });
     }
   }).catch(function () { /* backend unreachable: let the submit report it */ });
 
@@ -85,8 +116,7 @@
     done.hidden = true;
     status.hidden = false;
     status.textContent = 'Folding your chit…';
-    stage.hidden = false;
-    document.body.style.overflow = 'hidden';
+    show('drop');
     RavanArt.setMouth(stageSvg, 0);
 
     var chit = Chit.create({ id: 'local-' + Date.now(), category: category, message: message });
@@ -132,7 +162,12 @@
       });
     }).catch(function (e) {
       chit.remove();
-      closeStage();
+      if (e && e.code === 'CLOSED') {
+        sealed = true; $('ctaBtn').hidden = true; $('sealedNotice').hidden = false;
+        show('welcome', { replace: true });
+        return;
+      }
+      show('pick');
       showError(friendly(e));
     });
   }
@@ -144,17 +179,10 @@
     return 'Could not reach the Ravan Box. Check your connection and try again.';
   }
 
-  function closeStage() {
-    $('dropStage').hidden = true;
-    document.body.style.overflow = '';
-  }
-
-  $('doneBtn').addEventListener('click', function () { closeStage(); window.scrollTo(0, 0); });
-  $('againBtn').addEventListener('click', function () {
-    closeStage();
-    $('drop').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
-  });
+  // after the drop: Done → screen 1, Drop another → screen 2
+  $('doneBtn').addEventListener('click', function () { show('welcome', { replace: true }); });
+  $('againBtn').addEventListener('click', function () { show('pick', { replace: true }); });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !$('stageDone').hidden) closeStage();
+    if (e.key === 'Escape' && current === 'drop' && !$('stageDone').hidden) show('welcome', { replace: true });
   });
 })();
