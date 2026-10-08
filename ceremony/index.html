@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0c0306">
+  <title>Our Digital Ravan</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800&family=Kalam:wght@400;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/ceremony.css">
+</head>
+<body class="ceremony" data-state="CEREMONY_READY">
+  <div class="stage" id="stage">
+    <div class="stage-bg" aria-hidden="true"></div>
+    <div class="garland" id="garland" aria-hidden="true"></div>
+
+    <header class="c-head" id="cHead">
+      <h1 class="c-title display"><span aria-hidden="true">🏹</span> <span class="gold-text">OUR DIGITAL RAVAN</span></h1>
+    </header>
+
+    <div class="ravan-aura" id="ravanAura" aria-hidden="true"></div>
+    <div class="ravan-wrap" id="ravanWrap">
+      <div class="ravan idle" id="ravanMain" role="button" tabindex="0" aria-label="Ravan. Click or press Space to open his mouth."></div>
+      <div class="ravan-copy ravan-hot" id="ravanHot" aria-hidden="true"></div>
+      <div class="ravan-copy ravan-char" id="ravanChar" aria-hidden="true"></div>
+      <div class="eye-flash" aria-hidden="true"><span></span><span></span></div>
+    </div>
+
+    <div class="c-sub" id="cSub">
+      <p class="c-tagline">“All the things we choose to leave behind.”</p>
+      <p class="c-count"><span aria-hidden="true">🔥</span> <span id="countNum">0</span> <span id="countWord">RAVANS</span> INSIDE</p>
+      <p class="c-hint" id="openHint">Click Ravan or press <kbd>Space</kbd></p>
+    </div>
+
+    <div class="chits-layer" id="chitsLayer" aria-label="Paper chits from Ravan's mouth"></div>
+
+    <div class="c-actions" id="actions" hidden>
+      <button class="btn btn-ghost reveal-btn" id="revealBtn" type="button"><span aria-hidden="true">🎲</span> Reveal a few</button>
+      <div class="burn-block">
+        <button class="btn burn-btn" id="burnBtn" type="button"><span aria-hidden="true">🔥</span> Burn our Ravan</button>
+        <p class="burn-q">“Are we ready to let it all go?”</p>
+      </div>
+    </div>
+
+    <canvas class="fire-canvas" id="fireCanvas" aria-hidden="true"></canvas>
+    <div class="rm-glow" id="rmGlow" aria-hidden="true"></div>
+
+    <div class="focus-layer" id="focusLayer" tabindex="-1" role="dialog" aria-label="Enlarged paper chit — press Esc or Space to return" hidden></div>
+
+    <div class="reveal-layer" id="revealLayer" hidden>
+      <p class="reveal-count" id="revealCount"></p>
+      <div class="reveal-slot" id="revealSlot"></div>
+      <div class="reveal-bar"><span id="revealBar"></span></div>
+      <p class="reveal-hint"><kbd>Space</kbd> next · <kbd>Esc</kbd> back to all chits</p>
+    </div>
+
+    <section class="final" id="final" hidden aria-live="polite">
+      <h1 class="f-1 display"><span aria-hidden="true">🔥</span> <span class="gold-text">ALL RAVANS DEFEATED</span></h1>
+      <p class="f-2">“What we let go of today<br>makes space for what we become tomorrow.”</p>
+      <h2 class="f-3 display"><span aria-hidden="true">🏹</span> <span class="gold-text">VICTORY WITHIN</span></h2>
+      <p class="f-4">HAPPY DUSSEHRA</p>
+      <p class="f-5" id="finalDate">16 OCTOBER 2026</p>
+      <div class="diyas" aria-hidden="true"><i class="diya"></i><i class="diya"></i><i class="diya"></i><i class="diya"></i><i class="diya"></i></div>
+    </section>
+
+    <div class="c-controls" id="controls">
+      <span class="c-badge" id="testBadge" hidden>🧪 TEST MODE · nothing is saved</span>
+      <button class="ctl" id="soundBtn" type="button" aria-pressed="false">🔇 Sound off</button>
+      <button class="ctl" id="fsBtn" type="button" title="Fullscreen (F)">⛶ Fullscreen</button>
+      <button class="ctl" id="exitBtn" type="button" title="Exit (Esc)">✕ Exit</button>
+    </div>
+
+    <div class="c-toast" id="cToast" role="status" aria-live="polite" hidden></div>
+
+    <div class="c-modal" id="resetModal" hidden role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+      <div class="c-modal-card">
+        <h2 id="resetTitle">Reset the presentation?</h2>
+        <p>Ravan returns, closed, ready to run again. <strong>No submissions are deleted.</strong></p>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" id="resetCancel" type="button">Cancel (Esc)</button>
+          <button class="btn btn-sm" id="resetOk" type="button">Reset (Enter)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="c-msg" id="msgPanel" hidden>
+      <p id="msgText"></p>
+      <a class="btn btn-gold btn-sm" href="../admin/">Go to admin</a>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/categories.js"></script>
+  <script src="../js/local-backend.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/ravan.js"></script>
+  <script src="../js/chit.js"></script>
+  <script src="../js/sound.js"></script>
+  <script src="../js/fire.js"></script>
+  <script src="../js/ceremony.js"></script>
+</body>
+</html>

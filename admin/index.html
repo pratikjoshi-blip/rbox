@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#12050a">
+  <title>Ravan Box Admin</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800&family=Kalam:wght@400;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="admin">
+
+  <!-- ===== LOGIN ===== -->
+  <section class="login" id="loginView" hidden>
+    <div class="login-card">
+      <div class="login-ravan ravan idle" id="loginRavan"></div>
+      <h1 class="display"><span class="gold-text">DIGITAL RAVAN BOX</span></h1>
+      <p class="muted">Organizer access</p>
+      <form id="loginForm" autocomplete="off">
+        <label for="pw" class="sr-only">Admin password</label>
+        <input id="pw" type="password" placeholder="Admin password" required autocomplete="current-password">
+        <button class="btn btn-gold" type="submit" id="loginBtn">Enter</button>
+        <p class="form-error" id="loginError" role="alert" hidden></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===== DASHBOARD ===== -->
+  <div class="dash" id="dashView" hidden>
+    <header class="topbar">
+      <h1 class="display"><span aria-hidden="true">🏹</span> <span class="gold-text">DIGITAL RAVAN BOX</span></h1>
+      <div class="topbar-right">
+        <span class="state-pill" id="statePill">…</span>
+        <button class="btn btn-ghost btn-sm" id="refreshBtn" type="button">↻ Refresh</button>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn" type="button">Log out</button>
+      </div>
+    </header>
+
+    <p class="banner" id="localBanner" hidden>🧪 Local mode — data is stored in <strong>this browser only</strong> (no server). Set <code>API_URL</code> in <code>js/config.js</code> to your Apps Script URL so phones can submit.</p>
+
+    <section class="kpis" aria-label="Summary">
+      <div class="kpi kpi-main"><span class="kpi-label">Total submissions</span><span class="kpi-value" id="kpiTotal">0</span><span class="kpi-note" id="kpiTotalNote">real, anonymous</span></div>
+      <div class="kpi"><span class="kpi-label">Demo entries</span><span class="kpi-value" id="kpiDemo">0</span><span class="kpi-note">test data</span></div>
+      <div class="kpi"><span class="kpi-label">Burned</span><span class="kpi-value" id="kpiBurned">0</span><span class="kpi-note" id="kpiBurnedNote">not yet</span></div>
+      <div class="kpi"><span class="kpi-label">Latest drop</span><span class="kpi-value kpi-small" id="kpiLatest">—</span><span class="kpi-note">auto-refreshes every 30 s</span></div>
+    </section>
+
+    <div class="grid">
+      <section class="card card-chart">
+        <div class="card-head">
+          <h2>Category statistics</h2>
+          <label class="toggle"><input type="checkbox" id="includeDemo"> Include demo data</label>
+        </div>
+        <div class="chart" id="chart" role="list" aria-label="Submissions per category"></div>
+        <p class="empty" id="chartEmpty" hidden>No Ravans yet. Share the QR code — or generate demo data below.</p>
+      </section>
+
+      <section class="card card-ceremony">
+        <h2>Ceremony</h2>
+        <p class="muted small">Projector / TV, 16:9. Keys: <kbd>Space</kbd> open · <kbd>B</kbd> burn · <kbd>R</kbd> reset · <kbd>Esc</kbd> exit</p>
+        <button class="btn btn-gold btn-big" id="startBtn" type="button">🎬 Start ceremony</button>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" id="testBtn" type="button">🧪 Test ceremony</button>
+          <button class="btn btn-ghost btn-sm" id="sealBtn" type="button">🔒 Seal the box</button>
+        </div>
+        <button class="btn btn-danger btn-sm" id="resetBtn" type="button">Reset ceremony</button>
+        <p class="muted small">Burning is visual only — records are kept and marked <code>burned = true</code>.</p>
+      </section>
+
+      <section class="card card-demo">
+        <h2>🧪 Demo mode</h2>
+        <p class="muted small">Generate demo data — clearly marked as test entries.</p>
+        <div class="row demo-row">
+          <button class="btn btn-ghost btn-sm" data-demo="5" type="button">+5</button>
+          <button class="btn btn-ghost btn-sm" data-demo="10" type="button">+10</button>
+          <button class="btn btn-ghost btn-sm" data-demo="20" type="button">+20</button>
+          <button class="btn btn-ghost btn-sm" data-demo="22" type="button">+22</button>
+        </div>
+        <div class="row">
+          <button class="btn btn-danger btn-sm" id="clearDemoBtn" type="button">Clear demo data</button>
+          <button class="btn btn-ghost btn-sm" id="testBtn2" type="button">Test ceremony ▶</button>
+        </div>
+      </section>
+
+      <section class="card card-share">
+        <h2>Share with employees</h2>
+        <div class="qr-wrap"><canvas id="qrCanvas" width="640" height="640" aria-label="QR code for the public page"></canvas></div>
+        <p class="public-url" id="publicUrl"></p>
+        <p class="muted small" id="publicUrlNote" hidden></p>
+        <div class="row">
+          <button class="btn btn-gold btn-sm" id="downloadQr" type="button">Download QR code</button>
+          <button class="btn btn-ghost btn-sm" id="copyLink" type="button">Copy public link</button>
+        </div>
+        <a class="btn btn-ghost btn-sm" id="posterLink" href="poster.html" target="_blank" rel="noopener">🖨️ Printable poster</a>
+      </section>
+    </div>
+
+    <section class="card wall-card">
+      <div class="card-head">
+        <h2>Anonymous chits</h2>
+        <div class="seg" role="group" aria-label="Filter chits">
+          <button type="button" class="seg-btn is-on" data-filter="all">All</button>
+          <button type="button" class="seg-btn" data-filter="real">Real</button>
+          <button type="button" class="seg-btn" data-filter="demo">Demo</button>
+        </div>
+      </div>
+      <div class="wall" id="wall"></div>
+      <p class="empty" id="wallEmpty" hidden>The Ravan's mouth is empty… for now.</p>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <dialog class="dialog" id="confirmDialog">
+    <form method="dialog">
+      <h2 id="confirmTitle">Are you sure?</h2>
+      <p id="confirmText"></p>
+      <div id="confirmTypeWrap" hidden>
+        <label for="confirmInput" class="small">Type <strong id="confirmWord">RESET</strong> to confirm</label>
+        <input id="confirmInput" autocomplete="off">
+      </div>
+      <div class="row end">
+        <button class="btn btn-ghost btn-sm" value="cancel">Cancel</button>
+        <button class="btn btn-sm" value="ok" id="confirmOk">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/categories.js"></script>
+  <script src="../js/local-backend.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/ravan.js"></script>
+  <script src="../js/chit.js"></script>
+  <script src="../js/vendor/qrcode.js"></script>
+  <script src="../js/qr.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>

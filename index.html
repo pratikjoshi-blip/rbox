@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12050a">
+  <meta name="description" content="Write it. Drop it. Let it go. An anonymous digital Dussehra ritual.">
+  <title>Digital Ravan Box</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800&family=Kalam:wght@400;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/employee.css">
+</head>
+<body class="employee">
+  <canvas class="fire-canvas" id="fireCanvas" aria-hidden="true"></canvas>
+
+  <header class="hero">
+    <div class="hero-ravan ravan idle" id="heroRavan"></div>
+    <h1 class="hero-title display"><span aria-hidden="true">🏹</span> <span class="gold-text">DIGITAL RAVAN BOX</span></h1>
+    <p class="hero-sub">“What will you let go of this Dussehra?”</p>
+    <p class="hero-tag">Write it. Drop it. Let it go.</p>
+    <a class="btn btn-gold hero-cta" href="#drop" id="ctaBtn">Drop your Ravan</a>
+  </header>
+
+  <main id="drop" class="drop-section" tabindex="-1">
+    <div class="sealed" id="sealedNotice" hidden>
+      <p class="sealed-icon" aria-hidden="true">🔒</p>
+      <h2>The Ravan Box is sealed</h2>
+      <p>Submissions are closed. See you at the ceremony — let it all go on Dussehra.</p>
+    </div>
+
+    <form id="dropForm" class="drop-form" novalidate autocomplete="off">
+      <fieldset class="cats">
+        <legend><span class="step">1</span> Pick the Ravan you'll defeat</legend>
+        <div class="cat-grid" id="catGrid"></div>
+      </fieldset>
+
+      <div class="msg-block">
+        <label for="msg"><span class="step">2</span> One thing I want to let go of:</label>
+        <textarea id="msg" name="message" rows="3" maxlength="150" placeholder="e.g. I want to stop worrying about things I cannot control."></textarea>
+        <div class="msg-meta">
+          <span id="msgHint">Optional — but it makes the ceremony special.</span>
+          <span id="msgCount" aria-live="polite">0 / 150</span>
+        </div>
+      </div>
+
+      <p class="anon-note"><span aria-hidden="true">🔒</span> 100% anonymous. No name, email, phone or login — ever.</p>
+
+      <p class="form-error" id="formError" role="alert" hidden></p>
+      <button type="submit" class="btn drop-btn" id="dropBtn"><span aria-hidden="true">🔥</span> Drop it in the Ravan Box</button>
+    </form>
+  </main>
+
+  <footer class="site-foot">
+    <p><span id="eventDate">16 OCTOBER 2026</span> · <strong class="gold-text">VICTORY WITHIN</strong></p>
+  </footer>
+
+  <!-- the drop moment: paper chit flies into Ravan's mouth -->
+  <div class="drop-stage" id="dropStage" hidden>
+    <div class="stage-ravan ravan" id="stageRavan"></div>
+    <div class="stage-status" id="stageStatus" aria-live="polite">Folding your chit…</div>
+    <div class="stage-done" id="stageDone" hidden>
+      <h2 class="display"><span aria-hidden="true">🔥</span> <span class="gold-text">YOUR RAVAN IS IN THE BOX</span></h2>
+      <p>“Let it go on Dussehra.”</p>
+      <div class="stage-actions">
+        <button type="button" class="btn btn-gold" id="doneBtn">Done</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="againBtn">Drop another</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/local-backend.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ravan.js"></script>
+  <script src="js/chit.js"></script>
+  <script src="js/fire.js"></script>
+  <script src="js/employee.js"></script>
+</body>
+</html>

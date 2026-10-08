@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Ravan Box Poster</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/base.css">
+  <style>
+    @page { size: A4 portrait; margin: 0; }
+    body { display: grid; place-items: center; padding: 24px 16px; background: #0a0306; }
+    .poster {
+      width: min(100%, 210mm); aspect-ratio: 210 / 297; position: relative; overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center;
+      padding: 7% 7% 6%;
+      background:
+        radial-gradient(ellipse 90% 50% at 50% 18%, rgba(200, 16, 46, 0.55), transparent 70%),
+        radial-gradient(ellipse 90% 40% at 50% 100%, rgba(255, 138, 31, 0.35), transparent 70%),
+        #170509;
+      border: 3px solid var(--gold); box-shadow: inset 0 0 0 10px #170509, inset 0 0 0 12px rgba(244, 197, 66, 0.6);
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .p-ravan { width: 78%; aspect-ratio: 1000 / 800; margin-top: -2%; }
+    .p-title { font-size: clamp(1.6rem, 6.4vw, 3.3rem); line-height: 1.05; }
+    .p-q { font: 800 clamp(1rem, 3.6vw, 1.75rem)/1.2 var(--font-head); letter-spacing: 0.08em; color: var(--ink); margin: 0.4em 0 0; }
+    .p-mid { display: flex; align-items: center; justify-content: center; gap: 6%; width: 100%; }
+    .p-steps { list-style: none; margin: 0; padding: 0; text-align: left; display: grid; gap: 0.45em; font: 700 clamp(0.95rem, 3.2vw, 1.55rem)/1.2 var(--font-head); letter-spacing: 0.06em; }
+    .p-qr { background: #fff8e6; padding: 3%; border-radius: 14px; width: 36%; box-shadow: 0 0 0 4px var(--gold), 0 0 40px rgba(244, 197, 66, 0.35); }
+    .p-qr canvas { display: block; width: 100%; height: auto; }
+    .p-date { font: 800 clamp(1rem, 3.4vw, 1.6rem)/1 var(--font-head); letter-spacing: 0.2em; color: var(--gold-light); margin: 0; }
+    .p-win { font-size: clamp(1.1rem, 4vw, 2rem); margin: 0.3em 0 0; }
+    .p-url { font-size: clamp(0.6rem, 1.8vw, 0.85rem); color: var(--muted); word-break: break-all; margin: 0.4em 0 0; }
+    .controls { margin-top: 16px; display: flex; gap: 10px; }
+    @media print { body { padding: 0; background: none; } .controls { display: none; } .poster { width: 210mm; height: 297mm; aspect-ratio: auto; } }
+  </style>
+</head>
+<body>
+  <main class="poster" id="poster">
+    <div>
+      <div class="p-ravan ravan" id="pRavan"></div>
+      <h1 class="p-title display"><span aria-hidden="true">🏹</span> <span class="gold-text">DIGITAL RAVAN BOX</span></h1>
+      <p class="p-q">WHAT WILL YOU LET GO OF?</p>
+    </div>
+    <div class="p-mid">
+      <ul class="p-steps">
+        <li>📱 Scan</li>
+        <li>✍️ Write</li>
+        <li>🔥 Drop it</li>
+        <li>🏹 Let it go</li>
+      </ul>
+      <div class="p-qr"><canvas id="pQr" width="900" height="900" aria-label="QR code"></canvas></div>
+    </div>
+    <div>
+      <p class="p-date" id="pDate">16 OCTOBER 2026</p>
+      <p class="p-win display"><span class="gold-text">VICTORY WITHIN</span></p>
+      <p class="p-url" id="pUrl"></p>
+    </div>
+  </main>
+  <div class="controls"><button class="btn btn-gold" onclick="window.print()">🖨️ Print / Save as PDF</button></div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/ravan.js"></script>
+  <script src="../js/vendor/qrcode.js"></script>
+  <script src="../js/qr.js"></script>
+  <script>
+    (function () {
+      var cfg = window.RAVAN_CONFIG;
+      var q = new URLSearchParams(location.search).get('url') || '';
+      var url = /^https?:\/\//i.test(q) ? q : (cfg.PUBLIC_URL || new URL('../', location.href).href);
+      document.getElementById('pRavan').innerHTML = RavanArt.markup('pr');
+      document.getElementById('pUrl').textContent = url;
+      document.getElementById('pDate').textContent = cfg.EVENT_DATE_LABEL;
+      RavanQR.draw(document.getElementById('pQr'), url);
+    })();
+  </script>
+</body>
+</html>

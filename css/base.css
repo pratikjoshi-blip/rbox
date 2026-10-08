@@ -1,0 +1,175 @@
+/* ============================================================
+   DIGITAL RAVAN BOX — shared tokens, typography, Ravan + chits
+   ============================================================ */
+:root {
+  --bg: #12050a;
+  --bg-2: #22070f;
+  --bg-3: #3a0b17;
+  --maroon: #6d0f22;
+  --red: #c8102e;
+  --saffron: #ff8a1f;
+  --gold: #f4c542;
+  --gold-light: #fff1a8;
+  --gold-deep: #b07a12;
+  --ink: #fff7e8;
+  --ink-2: #f1dcbc;
+  --muted: #c7a687;
+  --paper-ink: #3b2414;
+  --paper-accent: #8a1426;
+  --line: rgba(244, 197, 66, 0.28);
+  --card: rgba(255, 241, 168, 0.05);
+  --danger: #ff6b5a;
+  --ok: #7ad69a;
+  --radius: 16px;
+  --font-display: 'Cinzel Decorative', 'Cinzel', Georgia, serif;
+  --font-head: 'Cinzel', Georgia, serif;
+  --font-body: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-hand: 'Kalam', 'Segoe Print', 'Bradley Hand', cursive;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 55% at 50% 0%, rgba(200, 16, 46, 0.28), transparent 70%),
+    radial-gradient(ellipse 70% 45% at 50% 100%, rgba(255, 138, 31, 0.16), transparent 70%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+h1, h2, h3 { font-family: var(--font-head); letter-spacing: 0.04em; line-height: 1.15; margin: 0; }
+.display { font-family: var(--font-display); font-weight: 900; }
+.gold-text {
+  background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 50%, #d98b12 100%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+
+:focus-visible { outline: 3px solid var(--gold-light); outline-offset: 3px; }
+
+/* ---------- buttons ---------- */
+.btn {
+  -webkit-appearance: none; appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+  min-height: 52px; padding: 0.8em 1.6em;
+  border: 2px solid var(--gold); border-radius: 999px;
+  background: linear-gradient(180deg, #e0331f, #9c0f1f);
+  color: #fff8e6; font: 700 1rem/1.1 var(--font-head); letter-spacing: 0.08em;
+  text-transform: uppercase; text-decoration: none; cursor: pointer;
+  box-shadow: 0 6px 22px rgba(200, 16, 46, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  touch-action: manipulation;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 138, 31, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.btn-gold { background: linear-gradient(180deg, #ffe58a, #e0a526); color: #3a1406; border-color: #fff1a8; box-shadow: 0 6px 22px rgba(244, 197, 66, 0.35); }
+.btn-ghost { background: transparent; color: var(--gold-light); border-color: var(--line); box-shadow: none; }
+.btn-ghost:hover { border-color: var(--gold); box-shadow: none; background: rgba(244, 197, 66, 0.08); }
+.btn-sm { min-height: 40px; padding: 0.5em 1.1em; font-size: 0.8rem; }
+.btn-danger { background: transparent; border-color: rgba(255, 107, 90, 0.6); color: #ffb3a8; box-shadow: none; }
+.btn-danger:hover { background: rgba(255, 107, 90, 0.12); box-shadow: none; }
+
+/* ---------- Ravan ---------- */
+.ravan { position: relative; }
+.ravan-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ravan-svg .rv-mandala { transform-box: view-box; transform-origin: 500px 330px; animation: rv-spin 140s linear infinite; }
+.ravan-svg .rv-crown { transform-box: view-box; transform-origin: 500px 320px; }
+.ravan-svg .rv-brow { transition: transform 0.4s ease; }
+.ravan-svg .rv-eyeglow { transition: opacity 0.5s ease; }
+.ravan-svg .rv-sideheads { transform-box: view-box; transform-origin: 500px 460px; }
+.ravan.idle .ravan-svg { animation: rv-breathe 5s ease-in-out infinite; transform-origin: 50% 70%; }
+.ravan.idle .rv-sideheads { animation: rv-heads 7s ease-in-out infinite; }
+
+.ravan.react { animation: rv-shake 0.7s cubic-bezier(.36,.07,.19,.97) 2; }
+.ravan.react .rv-crown { animation: rv-crown 0.7s ease-in-out 2; }
+.ravan.react .rv-brow, .ravan.glow .rv-brow { transform: translateY(-9px); }
+.ravan.glow .rv-eyeglow { opacity: 0.85; }
+.ravan.flash .rv-eyeglow { opacity: 1; }
+
+@keyframes rv-spin { to { transform: rotate(360deg); } }
+@keyframes rv-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.012); } }
+@keyframes rv-heads { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(1.015); } }
+@keyframes rv-shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-0.4deg); }
+  20%, 80% { transform: translate3d(4px, 0, 0) rotate(0.5deg); }
+  30%, 50%, 70% { transform: translate3d(-6px, 1px, 0) rotate(-0.8deg); }
+  40%, 60% { transform: translate3d(6px, -1px, 0) rotate(0.8deg); }
+}
+@keyframes rv-crown { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-2.5deg) translateY(-6px); } 65% { transform: rotate(2deg) translateY(-3px); } }
+
+/* ---------- paper chits ---------- */
+.chit {
+  -webkit-appearance: none; appearance: none;
+  position: relative; display: block; margin: 0; padding: 0; border: 0; background: none;
+  color: var(--paper-ink); font: inherit; text-align: center; cursor: default;
+  filter: drop-shadow(0 7px 9px rgba(0, 0, 0, 0.5)) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+button.chit { cursor: pointer; }
+.chit-paper {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35em;
+  width: 100%; height: 100%;
+  padding: 0.95em 1.05em 1.15em;
+  background-color: #fbf1d6;
+  background-image:
+    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(140, 90, 30, 0.22) 100%),
+    linear-gradient(90deg, transparent calc(var(--fold, 50%) - 2px), rgba(90, 60, 20, 0.08) var(--fold, 50%), rgba(255, 255, 255, 0.4) calc(var(--fold, 50%) + 1px), transparent calc(var(--fold, 50%) + 4px)),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.3  0 0 0 0 0.12  0 0 0 0.22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  transform-origin: 50% 100%;
+}
+.chit-cat {
+  display: flex; align-items: center; justify-content: center; gap: 0.35em; flex-wrap: wrap;
+  font: 700 0.78em/1.15 var(--font-head); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--paper-accent);
+  padding-bottom: 0.35em; border-bottom: 1.5px dashed rgba(138, 20, 38, 0.35);
+}
+.chit-emoji { font-size: 1.15em; letter-spacing: 0; }
+.chit-msg { margin: 0; font-family: var(--font-hand); font-weight: 400; color: #2e1a0d; line-height: 1.22; overflow-wrap: anywhere; }
+.chit-msg.len-s { font-size: 1.22em; }
+.chit-msg.len-m { font-size: 1.08em; }
+.chit-msg.len-l { font-size: 0.96em; }
+.chit-msg.len-xl { font-size: 0.86em; }
+.chit-msg-empty { opacity: 0.75; font-style: italic; }
+.chit-burn { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+
+/* fluttering before the burn */
+.is-fluttering .chit-paper { animation: chit-flutter 0.32s ease-in-out infinite alternate; }
+.is-fluttering .chit-slot:nth-child(3n) .chit-paper { animation-duration: 0.27s; }
+.is-fluttering .chit-slot:nth-child(3n+1) .chit-paper { animation-duration: 0.37s; animation-delay: -0.1s; }
+@keyframes chit-flutter { from { transform: rotate(-1.6deg) skewX(-1deg); } to { transform: rotate(1.6deg) skewX(1.2deg) translateY(-2px); } }
+
+/* simultaneous burn — driven by --b (0 → 1) on the scope element */
+.is-burning .chit-paper {
+  --bb: calc((var(--b, 0) - var(--off, 0)) * 1.45);
+  -webkit-mask-image: linear-gradient(to top, transparent calc(var(--bb) * 100% - 20%), #000 calc(var(--bb) * 100% - 4%));
+  mask-image: linear-gradient(to top, transparent calc(var(--bb) * 100% - 20%), #000 calc(var(--bb) * 100% - 4%));
+  filter: sepia(calc(var(--b, 0) * 0.9)) brightness(calc(1 - var(--b, 0) * 0.3));
+  transform: perspective(500px) rotateX(calc(var(--b, 0) * 32deg)) rotateZ(calc(var(--b, 0) * -4deg)) scale(calc(1 - var(--b, 0) * 0.14));
+  animation: none;
+}
+.is-burning .chit-burn {
+  opacity: 1;
+  background: linear-gradient(to top,
+    rgba(26, 8, 2, 0.96) calc(var(--bb) * 100% - 5%),
+    #ff6a00 calc(var(--bb) * 100% - 1%),
+    rgba(255, 214, 110, 0.95) calc(var(--bb) * 100% + 1%),
+    rgba(120, 52, 10, 0.5) calc(var(--bb) * 100% + 8%),
+    rgba(120, 52, 10, 0) calc(var(--bb) * 100% + 28%));
+}
+.is-burning .chit-cat, .is-burning .chit-msg { opacity: calc(1 - var(--b, 0) * 1.4); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ravan.idle .ravan-svg, .ravan.idle .rv-sideheads, .ravan-svg .rv-mandala { animation: none; }
+  .ravan.react, .ravan.react .rv-crown { animation: none; }
+  .is-fluttering .chit-paper { animation: none; }
+}
