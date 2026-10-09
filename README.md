@@ -176,6 +176,10 @@ In real mode every step is saved. If the projector laptop refreshes mid-ceremony
 
 Everything uses relative paths, so the site works under the `/ravan-box/` sub-path without any changes.
 
+> **Caching:** GitHub Pages lets browsers cache files for 10 minutes. After you push a change, especially to `js/config.js`, bump the `?v=…` tag on the `<script>`/`<link>` lines in the four HTML pages so browsers fetch the new files. Then hard-refresh with **Ctrl+Shift+R**.
+>
+> If a page says **"The Ravan Box is sealed"** even though admin shows *Submissions open*, that browser is still running an old cached `config.js` in local mode. Hard-refresh it, or open the link in a private tab.
+
 > Is it safe to make the repo public? Yes. No secrets live in it. The admin password lives only in Apps Script properties, and the Sheet is private to your Google account.
 
 ## QR Code

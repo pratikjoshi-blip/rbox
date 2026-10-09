@@ -6,73 +6,268 @@
   <meta name="robots" content="noindex">
   <title>Ravan Box Poster</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/base.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800;900&family=Kalam:wght@400;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/base.css?v=20261009c">
   <style>
+    /* ============ A4 print poster (210 × 297 mm) ============ */
     @page { size: A4 portrait; margin: 0; }
-    body { display: grid; place-items: center; padding: 24px 16px; background: #0a0306; }
-    .poster {
-      width: min(100%, 210mm); aspect-ratio: 210 / 297; position: relative; overflow: hidden;
-      display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center;
-      padding: 7% 7% 6%;
+    html, body { margin: 0; }
+    body { background: #2b2326; min-height: 100vh; }
+
+    .sheet {
+      /* festive (dark) palette */
+      --p-bg: #160509; --p-bg-2: #3a0b17; --p-ink: #fff7e8; --p-ink-2: #f1dcbc; --p-muted: #d8b896;
+      --p-gold: #f4c542; --p-gold-2: #d9a11f; --p-accent: #ff8a1f; --p-card: rgba(255, 241, 168, 0.07);
+      --p-line: rgba(244, 197, 66, 0.55);
+      position: relative; width: 210mm; height: 297mm; overflow: hidden; box-sizing: border-box;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      padding: 15mm 13mm 11mm;
+      color: var(--p-ink); font-family: var(--font-body);
       background:
-        radial-gradient(ellipse 90% 50% at 50% 18%, rgba(200, 16, 46, 0.55), transparent 70%),
-        radial-gradient(ellipse 90% 40% at 50% 100%, rgba(255, 138, 31, 0.35), transparent 70%),
-        #170509;
-      border: 3px solid var(--gold); box-shadow: inset 0 0 0 10px #170509, inset 0 0 0 12px rgba(244, 197, 66, 0.6);
+        radial-gradient(ellipse 85% 34% at 50% 23%, rgba(200, 16, 46, 0.6), transparent 72%),
+        radial-gradient(ellipse 100% 30% at 50% 102%, rgba(255, 138, 31, 0.32), transparent 70%),
+        var(--p-bg);
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
-    .p-ravan { width: 78%; aspect-ratio: 1000 / 800; margin-top: -2%; }
-    .p-title { font-size: clamp(1.6rem, 6.4vw, 3.3rem); line-height: 1.05; }
-    .p-q { font: 800 clamp(1rem, 3.6vw, 1.75rem)/1.2 var(--font-head); letter-spacing: 0.08em; color: var(--ink); margin: 0.4em 0 0; }
-    .p-mid { display: flex; align-items: center; justify-content: center; gap: 6%; width: 100%; }
-    .p-steps { list-style: none; margin: 0; padding: 0; text-align: left; display: grid; gap: 0.45em; font: 700 clamp(0.95rem, 3.2vw, 1.55rem)/1.2 var(--font-head); letter-spacing: 0.06em; }
-    .p-qr { background: #fff8e6; padding: 3%; border-radius: 14px; width: 36%; box-shadow: 0 0 0 4px var(--gold), 0 0 40px rgba(244, 197, 66, 0.35); }
-    .p-qr canvas { display: block; width: 100%; height: auto; }
-    .p-date { font: 800 clamp(1rem, 3.4vw, 1.6rem)/1 var(--font-head); letter-spacing: 0.2em; color: var(--gold-light); margin: 0; }
-    .p-win { font-size: clamp(1.1rem, 4vw, 2rem); margin: 0.3em 0 0; }
-    .p-url { font-size: clamp(0.6rem, 1.8vw, 0.85rem); color: var(--muted); word-break: break-all; margin: 0.4em 0 0; }
-    .controls { margin-top: 16px; display: flex; gap: 10px; }
-    @media print { body { padding: 0; background: none; } .controls { display: none; } .poster { width: 210mm; height: 297mm; aspect-ratio: auto; } }
+    .sheet[data-theme="light"] {
+      --p-bg: #fff8ea; --p-bg-2: #f6e3c2; --p-ink: #3a0b17; --p-ink-2: #5a1a1a; --p-muted: #7a4a2a;
+      --p-gold: #b07a12; --p-gold-2: #c9902a; --p-accent: #c2410c; --p-card: rgba(176, 122, 18, 0.08);
+      --p-line: rgba(176, 122, 18, 0.55);
+      background:
+        radial-gradient(ellipse 85% 34% at 50% 23%, rgba(244, 197, 66, 0.35), transparent 72%),
+        var(--p-bg);
+    }
+    .sheet[data-theme="light"] .gold-text { background: linear-gradient(180deg, #c9902a, #8a5506); -webkit-background-clip: text; background-clip: text; }
+
+    /* ornamental double border */
+    .frame { position: absolute; inset: 5mm; border: 0.7mm solid var(--p-gold); border-radius: 4mm; pointer-events: none; }
+    .frame::after { content: ''; position: absolute; inset: 1.6mm; border: 0.3mm solid var(--p-line); border-radius: 3mm; }
+    .corner { position: absolute; width: 13mm; height: 13mm; color: var(--p-gold); }
+    .corner svg { width: 100%; height: 100%; display: block; }
+    .c-tl { top: 3.2mm; left: 3.2mm; } .c-tr { top: 3.2mm; right: 3.2mm; transform: scaleX(-1); }
+    .c-bl { bottom: 3.2mm; left: 3.2mm; transform: scaleY(-1); } .c-br { bottom: 3.2mm; right: 3.2mm; transform: scale(-1, -1); }
+
+    .toran { position: absolute; left: 7mm; right: 7mm; top: 6.5mm; height: 15mm; }
+    .toran svg { width: 100%; height: 100%; display: block; }
+
+    .eyebrow { margin: 4mm 0 0; font: 700 3.3mm/1 var(--font-head); letter-spacing: 0.45em; color: var(--p-gold); text-transform: uppercase; }
+    .eyebrow span { color: var(--p-ink-2); }
+
+    .ravan-zone { position: relative; width: 150mm; height: 98mm; margin-top: 1mm; }
+    .ravan-zone .ravan { position: absolute; inset: 0; }
+    .ravan-zone .glow { position: absolute; inset: 8% 18% -4%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 150, 40, 0.42), transparent); }
+    .sheet[data-theme="light"] .ravan-zone .glow { background: radial-gradient(closest-side, rgba(244, 197, 66, 0.35), transparent); }
+
+    .title { margin: -1mm 0 0; font-size: 15.5mm; line-height: 1; letter-spacing: 0.02em; white-space: nowrap; }
+    .question { margin: 3mm 0 0; font: 700 6.6mm/1.15 var(--font-head); color: var(--p-ink); }
+    .tagline { margin: 2mm 0 0; font: 600 4.1mm/1 var(--font-body); letter-spacing: 0.16em; color: var(--p-gold); text-transform: uppercase; }
+
+    /* CTA + QR */
+    .action { display: grid; grid-template-columns: 1fr 74mm; gap: 7mm; align-items: center; width: 100%; margin-top: 6mm; text-align: left; }
+    .how-title { margin: 0 0 3mm; font: 800 4.2mm/1 var(--font-head); letter-spacing: 0.28em; color: var(--p-gold); }
+    .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.6mm; counter-reset: s; }
+    .steps li { display: grid; grid-template-columns: 9mm 1fr; gap: 3mm; align-items: center; }
+    .steps .num { width: 9mm; height: 9mm; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(180deg, #ffe58a, #e0a526); color: #3a1406; font: 800 4.6mm/1 var(--font-head); box-shadow: 0 0 0 0.5mm rgba(255, 241, 168, 0.35); }
+    .steps b { display: block; font: 800 4.5mm/1.15 var(--font-head); color: var(--p-ink); letter-spacing: 0.03em; }
+    .steps small { display: block; margin-top: 0.6mm; font: 400 3.15mm/1.3 var(--font-body); color: var(--p-ink-2); }
+
+    .qr-card { position: relative; padding: 4.5mm 4.5mm 3.5mm; border-radius: 5mm; background: #fff8e6; text-align: center;
+      box-shadow: 0 0 0 1mm var(--p-gold), 0 0 0 2.2mm rgba(244, 197, 66, 0.25), 0 3mm 10mm rgba(0, 0, 0, 0.45); }
+    .qr-card canvas { display: block; width: 65mm; height: 65mm; }
+    .scan-me { position: absolute; top: -4.6mm; left: 50%; transform: translateX(-50%); white-space: nowrap;
+      padding: 1.6mm 5mm; border-radius: 99mm; background: linear-gradient(180deg, #e0331f, #9c0f1f); color: #fff8e6;
+      font: 800 3.6mm/1 var(--font-head); letter-spacing: 0.22em; box-shadow: 0 0 0 0.5mm #f4c542; }
+    .qr-note { margin: 2.2mm 0 0; font: 600 2.9mm/1.2 var(--font-body); color: #5a1a1a; letter-spacing: 0.04em; }
+
+    .cta { margin-top: 7mm; display: inline-flex; align-items: center; gap: 4mm; padding: 3.6mm 9mm; border-radius: 99mm;
+      background: linear-gradient(180deg, #ff5a1f 0%, #d0141f 60%, #8e0a18 100%); color: #fff8e6;
+      font: 900 6.4mm/1 var(--font-head); letter-spacing: 0.1em; box-shadow: 0 0 0 0.7mm var(--p-gold), 0 2mm 8mm rgba(255, 80, 0, 0.45); }
+    .cta .arrow { font-family: var(--font-body); font-weight: 700; }
+
+    .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.6mm 2mm; margin-top: 6mm; max-width: 176mm; }
+    .chip { padding: 1.2mm 3mm; border-radius: 99mm; border: 0.3mm solid var(--p-line); background: var(--p-card); font: 600 3mm/1.2 var(--font-body); color: var(--p-ink-2); white-space: nowrap; }
+
+    .ceremony { display: flex; align-items: center; gap: 4mm; width: 100%; margin-top: auto; padding: 3.6mm 5mm; border-radius: 4mm; border: 0.4mm dashed var(--p-line); background: var(--p-card); text-align: left; }
+    .ceremony .fire { font-size: 9mm; line-height: 1; }
+    .ceremony h3 { margin: 0; font: 800 4.4mm/1.15 var(--font-head); color: var(--p-gold); letter-spacing: 0.08em; }
+    .ceremony p { margin: 1mm 0 0; font: 400 3.2mm/1.35 var(--font-body); color: var(--p-ink-2); }
+    .ceremony .date { margin-left: auto; text-align: right; font: 900 5mm/1.05 var(--font-head); color: var(--p-ink); letter-spacing: 0.06em; white-space: nowrap; }
+
+    .foot { width: 100%; display: flex; align-items: flex-end; justify-content: space-between; margin-top: 4mm; }
+    .victory { font-size: 7mm; line-height: 1; }
+    .url { font: 500 2.7mm/1.2 var(--font-body); color: var(--p-muted); text-align: right; max-width: 95mm; word-break: break-all; }
+    .anon { font: 600 2.9mm/1.2 var(--font-body); color: var(--p-ink-2); }
+
+    /* ---------- screen preview + controls ---------- */
+    .stage { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 12px 30px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; color: #f1dcbc; font: 500 14px var(--font-body); }
+    .controls .seg { display: inline-flex; border: 1px solid rgba(244, 197, 66, 0.5); border-radius: 999px; padding: 3px; }
+    .controls .seg button { border: 0; background: transparent; color: #f1dcbc; font: 600 13px var(--font-body); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+    .controls .seg button[aria-pressed="true"] { background: #f4c542; color: #3a1406; }
+    .controls .hint { width: 100%; text-align: center; color: #c7a687; font-size: 12.5px; margin: 0; }
+    .controls .qr-warn { color: #ffd0c8; background: rgba(255, 107, 90, 0.18); border: 1px solid rgba(255, 107, 90, 0.6); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
+    .preview { transform-origin: top center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
+
+    @media print {
+      body { background: none; }
+      .stage { padding: 0; display: block; }
+      .controls { display: none; }
+      .preview { transform: none !important; box-shadow: none; margin: 0 !important; }
+    }
   </style>
 </head>
 <body>
-  <main class="poster" id="poster">
-    <div>
-      <div class="p-ravan ravan" id="pRavan"></div>
-      <h1 class="p-title display"><span aria-hidden="true">🏹</span> <span class="gold-text">DIGITAL RAVAN BOX</span></h1>
-      <p class="p-q">WHAT WILL YOU LET GO OF?</p>
+  <div class="stage">
+    <div class="controls" id="controls">
+      <button class="btn btn-gold btn-sm" type="button" id="printBtn">🖨️ Print / Save as PDF (A4)</button>
+      <div class="seg" role="group" aria-label="Poster style">
+        <button type="button" data-theme="dark" aria-pressed="true">Festive (dark)</button>
+        <button type="button" data-theme="light" aria-pressed="false">Ink-saver (light)</button>
+      </div>
+      <p class="hint">In the print dialog choose <b>A4</b>, margins <b>None</b>, scale <b>100%</b> and tick <b>Background graphics</b>.</p>
+      <p class="hint qr-target">QR opens: <b id="qrTarget"></b></p>
+      <p class="hint qr-warn" id="qrWarn" hidden>⚠ This QR code points to a local address that phones cannot open. Set <b>PUBLIC_URL</b> in js/config.js (or open this poster from the deployed GitHub Pages site) before printing.</p>
     </div>
-    <div class="p-mid">
-      <ul class="p-steps">
-        <li>📱 Scan</li>
-        <li>✍️ Write</li>
-        <li>🔥 Drop it</li>
-        <li>🏹 Let it go</li>
-      </ul>
-      <div class="p-qr"><canvas id="pQr" width="900" height="900" aria-label="QR code"></canvas></div>
-    </div>
-    <div>
-      <p class="p-date" id="pDate">16 OCTOBER 2026</p>
-      <p class="p-win display"><span class="gold-text">VICTORY WITHIN</span></p>
-      <p class="p-url" id="pUrl"></p>
-    </div>
-  </main>
-  <div class="controls"><button class="btn btn-gold" onclick="window.print()">🖨️ Print / Save as PDF</button></div>
 
-  <script src="../js/config.js"></script>
-  <script src="../js/ravan.js"></script>
-  <script src="../js/vendor/qrcode.js"></script>
-  <script src="../js/qr.js"></script>
+    <div class="preview" id="preview">
+      <main class="sheet" id="sheet" data-theme="dark">
+        <div class="frame" aria-hidden="true"></div>
+        <div class="corner c-tl" aria-hidden="true"></div><div class="corner c-tr" aria-hidden="true"></div>
+        <div class="corner c-bl" aria-hidden="true"></div><div class="corner c-br" aria-hidden="true"></div>
+        <div class="toran" id="toran" aria-hidden="true"></div>
+
+        <p class="eyebrow">Dussehra 2026 <span>·</span> Office celebration</p>
+
+        <div class="ravan-zone" aria-hidden="true">
+          <div class="glow"></div>
+          <div class="ravan" id="pRavan"></div>
+        </div>
+
+        <h1 class="title display"><span class="gold-text">DIGITAL RAVAN BOX</span></h1>
+        <p class="question">What will you let go of this Dussehra?</p>
+        <p class="tagline">Write it · Drop it · Let it go</p>
+
+        <section class="action">
+          <div>
+            <p class="how-title">HOW IT WORKS</p>
+            <ol class="steps">
+              <li><span class="num">1</span><span><b>Scan the QR code</b><small>Opens on any phone — no app, no login.</small></span></li>
+              <li><span class="num">2</span><span><b>Pick your Ravan</b><small>Anger, ego, overthinking, procrastination…</small></span></li>
+              <li><span class="num">3</span><span><b>Write one line</b><small>The one thing you want to leave behind (optional).</small></span></li>
+              <li><span class="num">4</span><span><b>Drop it in his mouth</b><small>Your paper chit goes inside the Ravan Box.</small></span></li>
+            </ol>
+          </div>
+          <div class="qr-card">
+            <span class="scan-me">SCAN ME</span>
+            <canvas id="pQr" width="1000" height="1000" role="img" aria-label="QR code to the Digital Ravan Box"></canvas>
+            <p class="qr-note">🔒 100% anonymous · takes 30 seconds</p>
+          </div>
+        </section>
+
+        <div class="cta"><span aria-hidden="true">🔥</span> SCAN &amp; DROP YOUR RAVAN <span class="arrow" aria-hidden="true">➜</span></div>
+
+        <div class="chips" id="chips" aria-label="Ravans you can defeat"></div>
+
+        <section class="ceremony">
+          <span class="fire" aria-hidden="true">🔥</span>
+          <div>
+            <h3>THE BURNING OF RAVAN</h3>
+            <p>On Dussehra we open Ravan's mouth, read the chits together<br>and burn them all — no names, ever.</p>
+          </div>
+          <div class="date" id="pDate">16 OCTOBER<br>2026</div>
+        </section>
+
+        <footer class="foot">
+          <div>
+            <p class="victory display" style="margin:0"><span aria-hidden="true">🏹</span> <span class="gold-text">VICTORY WITHIN</span></p>
+          </div>
+          <p class="url" id="pUrl" style="margin:0"></p>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/config.js?v=20261009c"></script>
+  <script src="../js/categories.js?v=20261009c"></script>
+  <script src="../js/ravan.js?v=20261009c"></script>
+  <script src="../js/vendor/qrcode.js?v=20261009c"></script>
+  <script src="../js/qr.js?v=20261009c"></script>
   <script>
     (function () {
       var cfg = window.RAVAN_CONFIG;
+      var $ = function (id) { return document.getElementById(id); };
       var q = new URLSearchParams(location.search).get('url') || '';
       var url = /^https?:\/\//i.test(q) ? q : (cfg.PUBLIC_URL || new URL('../', location.href).href);
-      document.getElementById('pRavan').innerHTML = RavanArt.markup('pr');
-      document.getElementById('pUrl').textContent = url;
-      document.getElementById('pDate').textContent = cfg.EVENT_DATE_LABEL;
-      RavanQR.draw(document.getElementById('pQr'), url);
+
+      $('pRavan').innerHTML = RavanArt.markup('pr');
+      $('pUrl').textContent = url.replace(/^https?:\/\//, '');
+      $('qrTarget').textContent = url;
+      // a QR to localhost / 127.x / a file path is useless on a phone — warn loudly
+      $('qrWarn').hidden = /^https?:\/\//i.test(url) && !/^https?:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/i.test(url);
+
+      // "16 OCTOBER 2026" → "16 OCTOBER<br>2026" (text nodes only, no HTML from config)
+      var parts = String(cfg.EVENT_DATE_LABEL || '').trim().split(/\s+(?=\d{4}$)/);
+      var dateEl = $('pDate'); dateEl.textContent = parts[0] || '';
+      if (parts[1]) { dateEl.appendChild(document.createElement('br')); dateEl.appendChild(document.createTextNode(parts[1])); }
+
+      // Ravan chips (skip "Something Else")
+      RAVAN_CATEGORIES.filter(function (c) { return c.id !== 'other'; }).forEach(function (c) {
+        var s = document.createElement('span'); s.className = 'chip'; s.textContent = c.emoji + ' ' + c.label; $('chips').appendChild(s);
+      });
+
+      // ornamental corners
+      var corner = '<svg viewBox="0 0 50 50"><path d="M3 47 V14 Q3 3 14 3 H47" fill="none" stroke="currentColor" stroke-width="2.4"/>' +
+        '<path d="M10 40 V18 Q10 10 18 10 H40" fill="none" stroke="currentColor" stroke-width="1" opacity="0.7"/>' +
+        '<circle cx="14" cy="14" r="4" fill="#c8102e" stroke="currentColor" stroke-width="1.5"/></svg>';
+      Array.prototype.forEach.call(document.querySelectorAll('.corner'), function (el) { el.innerHTML = corner; });
+
+      // marigold toran
+      (function () {
+        var w = 1000, h = 100, swags = 6, s = '', colors = ['#ff9f1c', '#ffb703', '#f77f00', '#ffd166'];
+        for (var i = 0; i < swags; i++) {
+          var x0 = (i / swags) * w, x1 = ((i + 1) / swags) * w, cx = (x0 + x1) / 2, sag = 46;
+          s += '<path d="M' + x0 + ' 4 Q' + cx + ' ' + (4 + sag * 2) + ' ' + x1 + ' 4" stroke="#2f6b2a" stroke-width="2" fill="none"/>';
+          for (var k = 0; k <= 12; k++) {
+            var t = k / 12, x = (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cx + t * t * x1, y = (1 - t) * (1 - t) * 4 + 2 * (1 - t) * t * (4 + sag * 2) + t * t * 4;
+            s += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="6.5" fill="' + colors[k % 4] + '"/>';
+          }
+          if (i < swags - 1) {
+            for (var d = 0; d < 3; d++) s += '<circle cx="' + x1 + '" cy="' + (14 + d * 10) + '" r="5" fill="' + colors[(d + i) % 4] + '"/>';
+            s += '<path d="M' + (x1 - 5) + ' 46 L' + x1 + ' 60 L' + (x1 + 5) + ' 46 Z" fill="#2f8f3a"/>';
+          }
+        }
+        $('toran').innerHTML = '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' + s + '</svg>';
+      })();
+
+      RavanQR.draw($('pQr'), url);
+
+      // theme toggle
+      Array.prototype.forEach.call(document.querySelectorAll('[data-theme]'), function (b) {
+        if (b.tagName !== 'BUTTON') return;
+        b.addEventListener('click', function () {
+          $('sheet').setAttribute('data-theme', b.getAttribute('data-theme'));
+          Array.prototype.forEach.call(document.querySelectorAll('.seg button'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        });
+      });
+
+      // scale the 210 × 297 mm sheet to fit the screen (print is always 100%)
+      function fit() {
+        var pv = $('preview');
+        var mm = 96 / 25.4, w = 210 * mm, hgt = 297 * mm;
+        var wFit = (window.innerWidth - 24) / w;
+        var hFit = (window.innerHeight - $('controls').offsetHeight - 50) / hgt;
+        // desktop: whole sheet visible; phone: fit the width and scroll
+        var s = Math.min(1, window.innerWidth > 700 ? Math.min(wFit, hFit) : wFit);
+        pv.style.transform = 'scale(' + s + ')';
+        pv.style.marginBottom = (-(1 - s) * hgt) + 'px';
+      }
+      window.addEventListener('resize', fit); fit();
+
+      $('printBtn').addEventListener('click', function () {
+        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { window.print(); });
+      });
     })();
   </script>
 </body>

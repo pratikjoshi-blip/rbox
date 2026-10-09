@@ -3,7 +3,8 @@
  *
  * Uses error-correction level H (≈30% recoverable), so Ravan's face can sit in the
  * centre of the code. The emblem covers only ~7% of the symbol and never touches the
- * finder, timing or alignment patterns. Modules are rounded maroon dots on cream.
+ * finder, timing or alignment patterns. Square maroon modules on cream (verified with
+ * jsQR + OpenCV decoders across sizes).
  *
  *   RavanQR.draw(canvas, text, { emblem: true, frame: false }) → Promise
  */
@@ -77,7 +78,7 @@
       g.stroke();
     }
 
-    // data modules: rounded dots, deep maroon gradient (stays dark for scanners)
+    // data modules: solid squares by default (dots are optional but scan less reliably), deep maroon
     var grad = g.createLinearGradient(off, off, off + n * cell, off + n * cell);
     grad.addColorStop(0, INK);
     grad.addColorStop(1, INK_2);
@@ -101,7 +102,8 @@
     g.fill();
 
     // finder "eyes": rounded square ring + rounded inner square
-    var rr = opts.roundEyes === false ? 0 : 1;
+    // square finder 'eyes' by default: rounded ones failed decoder tests (see README)
+    var rr = opts.roundEyes === true ? 1 : 0;
     [[0, 0], [0, n - 7], [n - 7, 0]].forEach(function (p) {
       var x = off + p[1] * cell, y = off + p[0] * cell;
       g.fillStyle = INK;

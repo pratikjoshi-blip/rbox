@@ -14,8 +14,8 @@
 window.RAVAN_CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbzzml1quoUs8N-qdsubvwB7GemQQPa9J7kaCMLI-F0b1DG6gSHcqpTkaYlf4S3EKLHe/exec',
   LOCAL_ADMIN_PASSWORD: 'ravan2026',
-  PUBLIC_URL: '',
+  PUBLIC_URL: 'https://pratikjoshi-blip.github.io/rbox/',
   EVENT_ID: 'dussehra-2026',
-  EVENT_DATE_LABEL: '20 OCTOBER 2026',
+  EVENT_DATE_LABEL: '16 OCTOBER 2026',
   MESSAGE_MAX: 150
 };
