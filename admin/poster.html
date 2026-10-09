@@ -55,7 +55,7 @@
     .eyebrow { margin: 4mm 0 0; font: 700 3.3mm/1 var(--font-head); letter-spacing: 0.45em; color: var(--p-gold); text-transform: uppercase; }
     .eyebrow span { color: var(--p-ink-2); }
 
-    .ravan-zone { position: relative; width: 150mm; height: 98mm; margin-top: 1mm; }
+    .ravan-zone { position: relative; width: 150mm; height: 92mm; margin-top: 1mm; }
     .ravan-zone .ravan { position: absolute; inset: 0; }
     .ravan-zone .glow { position: absolute; inset: 8% 18% -4%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 150, 40, 0.42), transparent); }
     .sheet[data-theme="light"] .ravan-zone .glow { background: radial-gradient(closest-side, rgba(244, 197, 66, 0.35), transparent); }
@@ -89,15 +89,14 @@
     .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.6mm 2mm; margin-top: 6mm; max-width: 176mm; }
     .chip { padding: 1.2mm 3mm; border-radius: 99mm; border: 0.3mm solid var(--p-line); background: var(--p-card); font: 600 3mm/1.2 var(--font-body); color: var(--p-ink-2); white-space: nowrap; }
 
-    .ceremony { display: flex; align-items: center; gap: 4mm; width: 100%; margin-top: auto; padding: 3.6mm 5mm; border-radius: 4mm; border: 0.4mm dashed var(--p-line); background: var(--p-card); text-align: left; }
+    .ceremony { display: flex; align-items: center; gap: 4mm; width: 100%; margin-top: 6mm; padding: 3.6mm 5mm; border-radius: 4mm; border: 0.4mm dashed var(--p-line); background: var(--p-card); text-align: left; }
     .ceremony .fire { font-size: 9mm; line-height: 1; }
     .ceremony h3 { margin: 0; font: 800 4.4mm/1.15 var(--font-head); color: var(--p-gold); letter-spacing: 0.08em; }
     .ceremony p { margin: 1mm 0 0; font: 400 3.2mm/1.35 var(--font-body); color: var(--p-ink-2); }
     .ceremony .date { margin-left: auto; text-align: right; font: 900 5mm/1.05 var(--font-head); color: var(--p-ink); letter-spacing: 0.06em; white-space: nowrap; }
 
-    .foot { width: 100%; display: flex; align-items: flex-end; justify-content: space-between; margin-top: 4mm; }
+    .foot { width: 100%; display: flex; align-items: flex-end; justify-content: center; margin-top: auto; padding-top: 4mm; }
     .victory { font-size: 7mm; line-height: 1; }
-    .url { font: 500 2.7mm/1.2 var(--font-body); color: var(--p-muted); text-align: right; max-width: 95mm; word-break: break-all; }
     .anon { font: 600 2.9mm/1.2 var(--font-body); color: var(--p-ink-2); }
 
     /* ---------- screen preview + controls ---------- */
@@ -174,7 +173,7 @@
           <span class="fire" aria-hidden="true">🔥</span>
           <div>
             <h3>THE BURNING OF RAVAN</h3>
-            <p>On Dussehra we open Ravan's mouth, read the chits together<br>and burn them all — no names, ever.</p>
+            <p>This Dussehra, we’ll read it, release it, and burn it. <span aria-hidden="true">🔥</span><br>No names. No blame. Just a fresh start.</p>
           </div>
           <div class="date" id="pDate">16 OCTOBER<br>2026</div>
         </section>
@@ -183,7 +182,6 @@
           <div>
             <p class="victory display" style="margin:0"><span aria-hidden="true">🏹</span> <span class="gold-text">VICTORY WITHIN</span></p>
           </div>
-          <p class="url" id="pUrl" style="margin:0"></p>
         </footer>
       </main>
     </div>
@@ -202,7 +200,6 @@
       var url = /^https?:\/\//i.test(q) ? q : (cfg.PUBLIC_URL || new URL('../', location.href).href);
 
       $('pRavan').innerHTML = RavanArt.markup('pr');
-      $('pUrl').textContent = url.replace(/^https?:\/\//, '');
       $('qrTarget').textContent = url;
       // a QR to localhost / 127.x / a file path is useless on a phone — warn loudly
       $('qrWarn').hidden = /^https?:\/\//i.test(url) && !/^https?:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/i.test(url);
@@ -213,7 +210,11 @@
       if (parts[1]) { dateEl.appendChild(document.createElement('br')); dateEl.appendChild(document.createTextNode(parts[1])); }
 
       // Ravan chips (skip "Something Else")
-      RAVAN_CATEGORIES.filter(function (c) { return c.id !== 'other'; }).forEach(function (c) {
+      // alphabetical (A→Z), ignoring the curly quotes in “Not My Job”
+      var bare = function (c) { return c.label.replace(/[“”"]/g, ''); };
+      RAVAN_CATEGORIES.filter(function (c) { return c.id !== 'other'; })
+        .sort(function (a, b) { return bare(a).localeCompare(bare(b)); })
+        .forEach(function (c) {
         var s = document.createElement('span'); s.className = 'chip'; s.textContent = c.emoji + ' ' + c.label; $('chips').appendChild(s);
       });
 
