@@ -240,6 +240,21 @@
       localStorage.setItem(TEAMS_KEY, JSON.stringify(st));
       return st;
     }
+    if (body.action === 'teamsSpin') {
+      var known = {};
+      st.teams.forEach(function (x) { known[x.id] = 1; });
+      var order = [], seenS = {};
+      (Array.isArray(body.order) ? body.order : []).forEach(function (id) {
+        id = String(id);
+        if (!known[id]) fail('INVALID', 'A team on the wheel no longer exists — reload the spinner.');
+        if (!seenS[id]) { seenS[id] = 1; order.push(id); }
+      });
+      if (!order.length) fail('INVALID', 'Spin at least once.');
+      st.spin = { order: order, at: new Date().toISOString() };
+      st.updatedAt = st.spin.at;
+      localStorage.setItem(TEAMS_KEY, JSON.stringify(st));
+      return st;
+    }
     if (body.action !== 'teamsSave') fail('INVALID', 'Unknown action.');
     if (+body.expect !== (st.v || 0)) fail('STALE', 'Teams changed on another device — refreshed.');
     var list = Array.isArray(body.teams) ? body.teams : [];

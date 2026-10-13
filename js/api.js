@@ -98,6 +98,7 @@
     teamsList: function () { return call('teamsList'); },
     teamsSave: function (expect, teams) { return darts('teamsSave', { expect: expect, teams: teams }); },
     teamsReset: function () { return darts('teamsReset'); },
+    teamsSpin: function (order) { return darts('teamsSpin', { order: order }); },
     dartsReset: function () { return darts('dartsReset'); },
     huntReset: function () { return darts('huntReset'); },
     dartsThrow: function (expect, hit, zone) { return darts('dartsThrow', { expect: expect, hit: hit, zone: zone }); },

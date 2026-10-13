@@ -168,12 +168,19 @@
     RavanAPI.dartsReset().then(function (s) { editingSetup = false; setupLoaded = false; apply(s); flash('Reset ✓'); window.scrollTo(0, 0); }).catch(handleErr);
   });
 
+  // explain login failures: wrong PIN / rate limit / outdated backend / no connection
+  function loginError(err) {
+    if (err && (err.code === 'DENIED' || err.code === 'RATE')) return err.message;
+    if (err && err.code === 'AUTH') return 'The server is running an older backend. In Apps Script, paste the latest Code.gs and deploy a New version (Deploy → Manage deployments → Edit).';
+    if (err && err.code) return err.message;
+    return 'Could not reach the server. Check your connection and API_URL in js/config.js.';
+  }
   // ---------- login ----------
   $('loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
     $('loginBtn').disabled = true; $('loginMsg').hidden = true;
     RavanAPI.dartsLogin($('pin').value).then(function () { $('pin').value = ''; return load(); })
-      .catch(function (err) { $('loginMsg').textContent = err.code === 'DENIED' || err.code === 'RATE' ? err.message : 'Could not reach the server.'; $('loginMsg').hidden = false; })
+      .catch(function (err) { $('loginMsg').textContent = loginError(err); $('loginMsg').hidden = false; })
       .finally(function () { $('loginBtn').disabled = false; });
   });
 

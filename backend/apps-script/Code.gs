@@ -457,6 +457,20 @@ function teams_(action, body) {
       jsonSheet_(TEAMS_SHEET).clearContents();
       return jsonWrite_(TEAMS_SHEET, TEAMS_CACHE, { teams: [], v: (st.v || 0) + 1 });
     }
+    // spinner result: the playing order drawn on /spin/ (darts + hunt setup can apply it)
+    if (action === 'teamsSpin') {
+      var known = {};
+      st.teams.forEach(function (t) { known[t.id] = 1; });
+      var order = [], seenS = {};
+      (Array.isArray(body.order) ? body.order : []).forEach(function (id) {
+        id = String(id);
+        if (!known[id]) fail_('INVALID', 'A team on the wheel no longer exists — reload the spinner.');
+        if (!seenS[id]) { seenS[id] = 1; order.push(id); }
+      });
+      if (!order.length) fail_('INVALID', 'Spin at least once.');
+      st.spin = { order: order, at: new Date().toISOString() };
+      return jsonWrite_(TEAMS_SHEET, TEAMS_CACHE, st);
+    }
     if (action === 'teamsSave') {
       if (Number(body.expect) !== (st.v || 0)) { var e = new Error('Teams changed on another device — refreshed.'); e.code = 'STALE'; throw e; }
       var list = Array.isArray(body.teams) ? body.teams : [];

@@ -9,7 +9,7 @@
   function el(tag, className, text) { var e = document.createElement(tag); if (className) e.className = className; if (text != null) e.textContent = text; return e; }
 
   window.TeamPicker = function (box, opts) {
-    var teams = [], order = [];
+    var teams = [], order = [], spin = null;
 
     function render() {
       box.textContent = '';
@@ -21,13 +21,24 @@
         box.appendChild(empty);
         return;
       }
+      // last wheel spin from /spin/ → one tap to use it as the order
+      var spun = spin ? spin.order.filter(function (id) { return teams.some(function (t) { return t.id === id; }); }) : [];
+      if (spun.length) {
+        var nameOf = function (id) { for (var i = 0; i < teams.length; i++) if (teams[i].id === id) return teams[i].name; return ''; };
+        var useSpin = el('button', 'btn btn-gold btn-sm spin-use');
+        useSpin.type = 'button';
+        useSpin.textContent = '🎡 Use spinner order: ' + spun.map(nameOf).join(' → ');
+        useSpin.addEventListener('click', function () { order = spun.slice(); render(); });
+        box.appendChild(useSpin);
+      }
       var tools = el('div', 'picker-tools');
       var all = el('button', 'btn btn-ghost btn-sm', 'Select all'); all.type = 'button';
       all.addEventListener('click', function () { teams.forEach(function (t) { if (order.indexOf(t.id) < 0) order.push(t.id); }); render(); });
       var none = el('button', 'btn btn-ghost btn-sm', 'Clear'); none.type = 'button';
       none.addEventListener('click', function () { order = []; render(); });
       var manage = el('a', 'btn btn-ghost btn-sm', '✎ Manage teams'); manage.href = opts.manageHref;
-      tools.appendChild(all); tools.appendChild(none); tools.appendChild(manage);
+      var wheel = el('a', 'btn btn-ghost btn-sm', '🎡 Spinner'); wheel.href = opts.manageHref.replace(/teams\/$/, 'spin/'); wheel.target = '_blank'; wheel.rel = 'noopener';
+      tools.appendChild(all); tools.appendChild(none); tools.appendChild(manage); tools.appendChild(wheel);
       box.appendChild(tools);
       teams.forEach(function (t) {
         var pos = order.indexOf(t.id);
@@ -52,6 +63,7 @@
       load: function (preselect) {
         return RavanAPI.teamsList().then(function (s) {
           teams = (s && s.teams) || [];
+          spin = s && s.spin && Array.isArray(s.spin.order) ? s.spin : null;
           var ids = teams.map(function (t) { return t.id; });
           order = (preselect || []).filter(function (id) { return ids.indexOf(id) >= 0; });
           render();

@@ -200,6 +200,15 @@ Create the teams once at **`/teams/`**, using the scorer PIN. You can add, renam
 
 A game keeps the names it started with, so renaming a team later doesn't change a game already in progress. The list is stored in a **`Teams`** tab of the Sheet.
 
+## 🎡 Team spinner (who plays first?)
+
+**`/spin/`** is a big spinning wheel of your teams, made for the TV or projector. Press **SPIN** (or `Space`). The wheel slows down dramatically and lands on a team: "Team Hanuman PLAYS FIRST!" Spin again for second place, third place and so on. The last team is placed automatically.
+
+- **Fair:** the winner is drawn with the browser's cryptographic random generator *before* the animation starts, and the wheel then lands exactly on it. In testing, 120 draws across 5 teams came out at 20–27 each, against an expected 24.
+- **Leaving a team out:** tap a team's chip to take it off the wheel before you start spinning.
+- **Saved automatically:** the order needs the scorer PIN to save. Darts and treasure hunt setup then show **🎡 Use spinner order: A → B → C**, which fills in the order in one tap.
+- **Extras:** `F` toggles fullscreen, and there's an optional 🔊 tick sound that is off by default.
+
 ## 🎯 Ravan Darts (team scoreboard)
 
 The darts scoreboard is part of the same site and uses the same Google Sheet. It has two pages:

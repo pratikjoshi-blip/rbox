@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" class="tv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0c0306">
+  <title>Team Spinner</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/base.css?v=20261013d">
+  <link rel="stylesheet" href="../css/darts.css?v=20261013d">
+</head>
+<body class="tv spin-page">
+  <canvas class="tv-canvas" id="fireCanvas" aria-hidden="true"></canvas>
+  <div class="tv-stage">
+    <header class="tv-head">
+      <div>
+        <h1 class="display"><span aria-hidden="true">🎡</span> <span class="gold-text">WHO PLAYS FIRST?</span></h1>
+        <p class="sub">DUSSEHRA 2026 · TEAM SPINNER</p>
+      </div>
+      <div class="tv-status">
+        <button class="ctl" type="button" id="soundBtn" aria-pressed="false">🔇 Sound off</button>
+      </div>
+    </header>
+
+    <main class="spin-main">
+      <div class="wheel-zone">
+        <div class="wheel-pointer" aria-hidden="true"></div>
+        <canvas id="wheel" width="1000" height="1000" role="img" aria-label="Spinning wheel of teams"></canvas>
+        <div class="wheel-hub ravan" id="hub" aria-hidden="true"></div>
+      </div>
+
+      <aside class="spin-side">
+        <button class="btn burn-btn spin-btn" type="button" id="spinBtn">🎡 SPIN</button>
+        <p class="spin-hint" id="spinHint">Press <kbd>Space</kbd> or the button</p>
+
+        <div class="feed order-card">
+          <h2>PLAYING ORDER</h2>
+          <ol class="order-list" id="orderList"></ol>
+          <p class="note" id="savedNote" hidden>✓ Saved — use <b>🎡 Use spinner order</b> in darts or hunt setup.</p>
+        </div>
+
+        <div class="spin-tools">
+          <button class="btn btn-ghost btn-sm" type="button" id="resetBtn">↺ Start over</button>
+          <a class="btn btn-ghost btn-sm" href="../teams/">✎ Teams</a>
+        </div>
+        <div class="chips-wrap">
+          <p class="note" style="margin:0 0 6px">On the wheel (tap to leave a team out):</p>
+          <div class="team-chips" id="teamChips"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="announce" id="announce" hidden aria-live="assertive">
+    <p class="a-small" id="aSmall">PLAYS FIRST</p>
+    <h2 class="display"><span class="gold-text" id="aName"></span></h2>
+  </div>
+
+  <div class="c-modal" id="loginModal" hidden>
+    <form class="c-modal-card" id="loginForm" autocomplete="off">
+      <h2>Scorer sign-in</h2>
+      <p class="note" style="margin:0 0 10px">Needed to save the order for darts and the treasure hunt.</p>
+      <input class="inp" id="pin" type="password" placeholder="Scorer PIN" required autocomplete="current-password">
+      <p class="msg" id="loginMsg" hidden></p>
+      <div class="row"><button class="btn btn-gold btn-sm" type="submit" id="loginBtn">Continue</button></div>
+    </form>
+  </div>
+
+  <div class="saving" id="saving" role="status" aria-live="polite" hidden></div>
+
+  <script src="../js/config.js?v=20261013d"></script>
+  <script src="../js/local-backend.js?v=20261013d"></script>
+  <script src="../js/api.js?v=20261013d"></script>
+  <script src="../js/ravan.js?v=20261013d"></script>
+  <script src="../js/fire.js?v=20261013d"></script>
+  <script src="../js/spin.js?v=20261013d"></script>
+</body>
+</html>
