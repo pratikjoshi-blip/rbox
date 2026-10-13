@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#12050a">
+  <title>Darts Scorer</title>
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/base.css?v=20261013b">
+  <link rel="stylesheet" href="../../css/darts.css?v=20261013b">
+</head>
+<body>
+  <div class="scorer">
+    <header class="sc-head">
+      <h1 class="display"><span aria-hidden="true">🎯</span> <span class="gold-text">RAVAN DARTS</span></h1>
+      <div class="sc-menu" id="menu" hidden>
+        <a class="btn btn-ghost btn-sm" href="../" target="_blank" rel="noopener">📺 TV</a>
+        <button class="btn btn-ghost btn-sm" type="button" id="newGameBtn">New game</button>
+      </div>
+    </header>
+
+    <!-- login -->
+    <section class="view card" id="vLogin" hidden>
+      <h2>Scorer sign-in</h2>
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label for="pin">Scorer PIN</label>
+          <input class="inp" id="pin" type="password" inputmode="text" required autocomplete="current-password">
+          <small>The <b>DARTS_PIN</b> from Apps Script (or the admin password if no PIN is set).</small>
+        </div>
+        <button class="btn btn-gold wide" type="submit" id="loginBtn">Start scoring</button>
+        <p class="msg" id="loginMsg" hidden></p>
+      </form>
+    </section>
+
+    <!-- setup -->
+    <section class="view" id="vSetup" hidden>
+      <form class="card" id="setupForm" autocomplete="off">
+        <h2>New game</h2>
+        <div class="field">
+          <span class="lbl">Teams playing — tap in throwing order</span>
+          <div id="teamPicker"></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label for="rounds">Rounds</label><input class="inp" id="rounds" type="number" min="1" max="20" value="5" required></div>
+          <div class="field"><label for="perTurn">Darts / turn</label><input class="inp" id="perTurn" type="number" min="1" max="6" value="3" required></div>
+          <div class="field"><label for="bull">Bullseye pts</label><input class="inp" id="bull" type="number" min="-100" max="100" step="0.5" value="0" required></div>
+        </div>
+        <p class="note">Scoring: odd number −n (inside the ring −n/2) · even number +n (inside the ring +2n) · miss 0.</p>
+        <button class="btn btn-gold wide" type="submit" id="startBtn" style="margin-top:12px">🎯 Start game</button>
+        <button class="btn btn-ghost btn-sm wide" type="button" id="cancelSetup" style="margin-top:8px" hidden>Back to current game</button>
+        <p class="msg" id="setupMsg" hidden></p>
+      </form>
+    </section>
+
+    <!-- play -->
+    <section class="view" id="vPlay" hidden>
+      <div class="turn" id="turnCard" aria-live="polite">
+        <div class="turn-round" id="turnRound"></div>
+        <div class="turn-team" id="turnTeam"></div>
+        <div class="dots" id="turnDots"></div>
+        <div class="this-turn" id="thisTurn"></div>
+      </div>
+
+      <div class="pad" id="pad" aria-label="Number hit"></div>
+      <div class="pad-extra">
+        <button class="num" type="button" data-hit="BULL">🎯 BULL</button>
+        <button class="num" type="button" data-hit="MISS">✕ MISS</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" id="undoBtn">↶ Undo last</button>
+        <button class="btn btn-ghost" type="button" id="refreshBtn">↻ Refresh</button>
+      </div>
+
+      <div class="card mini-board">
+        <h2>Standings</h2>
+        <div id="miniBoard"></div>
+      </div>
+    </section>
+
+    <!-- game over -->
+    <section class="view card over" id="vOver" hidden>
+      <p class="trophy" aria-hidden="true">🏆</p>
+      <h2 class="display"><span class="gold-text" id="overWinner"></span></h2>
+      <p class="note" id="overNote"></p>
+      <div class="mini-board" id="overBoard"></div>
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" id="overUndo">↶ Undo last dart</button>
+        <button class="btn btn-gold" type="button" id="overNew">New game</button>
+      </div>
+    </section>
+    <section class="card danger-zone" id="dangerZone" hidden>
+      <h2>🧪 Testing</h2>
+      <p class="note" style="margin:0 0 12px">Wipes only the darts board (current game + history). Ravan Box chits, teams and the treasure hunt are never touched.</p>
+      <button class="btn btn-danger btn-sm wide" type="button" id="resetBtn">🧹 Reset darts</button>
+    </section>
+  </div>
+
+  <div class="backdrop" id="backdrop" hidden></div>
+  <div class="zone-sheet" id="zoneSheet" role="dialog" aria-modal="true" aria-labelledby="zoneTitle" hidden>
+    <h3 id="zoneTitle">Where did it land?</h3>
+    <div class="zone-btns">
+      <button class="zone-btn" type="button" data-zone="in"><span>Inside the ring</span><b id="ptsIn"></b></button>
+      <button class="zone-btn" type="button" data-zone="out"><span>Outside the ring</span><b id="ptsOut"></b></button>
+    </div>
+    <button class="zone-cancel" type="button" id="zoneCancel">Cancel</button>
+  </div>
+  <div class="saving" id="saving" role="status" aria-live="polite" hidden></div>
+
+  <script src="../../js/config.js?v=20261013b"></script>
+  <script src="../../js/local-backend.js?v=20261013b"></script>
+  <script src="../../js/api.js?v=20261013b"></script>
+  <script src="../../js/team-picker.js?v=20261013b"></script>
+  <script src="../../js/darts.js?v=20261013b"></script>
+  <script src="../../js/darts-score.js?v=20261013b"></script>
+</body>
+</html>

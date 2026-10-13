@@ -104,6 +104,10 @@
       return { token: token, expiresInSec: TOKEN_TTL_MS / 1000 };
     }
 
+    if (String(body.action).indexOf('darts') === 0) return darts(body, db, t);
+    if (String(body.action).indexOf('hunt') === 0) return hunt(body, db, t);
+    if (String(body.action).indexOf('teams') === 0) return teamsAction(body, db, t);
+
     var exp = db.tokens[body.token];
     if (!body.token || !exp || exp < t) fail('AUTH', 'Please log in again.');
     var mine = function (s) { return s.eventId === eventId; };
@@ -145,6 +149,156 @@
       default:
         fail('INVALID', 'Unknown action.');
     }
+  }
+
+  // ---- darts (mirrors darts_ in Code.gs) ----
+  var DARTS_KEY = 'ravan_local_darts_v1';
+  function dartsPoints(hit, zone, bull) {
+    if (hit === 'MISS') return 0;
+    if (hit === 'BULL') return Number(bull) || 0;
+    var n = Number(hit);
+    if (n % 2) return zone === 'in' ? -n / 2 : -n;
+    return zone === 'in' ? n * 2 : n;
+  }
+  function dartsLoad() {
+    try { var s = JSON.parse(localStorage.getItem(DARTS_KEY)); if (s && s.throws) return s; } catch (e) {}
+    return { game: null, throws: [] };
+  }
+  function dartsSave(st) { st.updatedAt = new Date().toISOString(); localStorage.setItem(DARTS_KEY, JSON.stringify(st)); return st; }
+
+  function darts(body, db, t) {
+    var st = dartsLoad();
+    if (body.action === 'dartsState') return st;
+    if (body.action === 'dartsLogin') {
+      var cfg = window.RAVAN_CONFIG || {};
+      var expected = cfg.LOCAL_DARTS_PIN || cfg.LOCAL_ADMIN_PASSWORD || 'ravan2026';
+      if (String(body.pin || '') !== expected) fail('DENIED', 'Wrong PIN.');
+      var token = newId() + newId() + newId();
+      db.tokens[token] = t + TOKEN_TTL_MS; save(db);
+      return { token: token };
+    }
+    var exp = db.tokens[body.token];
+    if (!body.token || !exp || exp < t) fail('AUTH', 'Please enter the scorer PIN again.');
+
+    if (body.action === 'dartsNewGame') {
+      var picked = resolveTeams(body.teamIds), teams = picked.names;
+      if (teams.length < 2 || teams.length > 12) fail('INVALID', 'Pick 2 to 12 teams.');
+      var rounds = Math.round(+body.rounds), per = Math.round(+body.dartsPerTurn), bull = +body.bullPoints || 0;
+      if (!(rounds >= 1 && rounds <= 20)) fail('INVALID', 'Rounds must be 1–20.');
+      if (!(per >= 1 && per <= 6)) fail('INVALID', 'Darts per turn must be 1–6.');
+      if (!(bull >= -100 && bull <= 100)) fail('INVALID', 'Bullseye points must be between −100 and 100.');
+      return dartsSave({ game: { id: newId(), teams: teams, teamIds: picked.ids, rounds: rounds, dartsPerTurn: per, bullPoints: bull, startedAt: new Date().toISOString() }, throws: [] });
+    }
+    if (body.action === 'dartsReset') return dartsSave({ game: null, throws: [] });
+    if (!st.game) fail('INVALID', 'Start a game first.');
+    if (+body.expect !== st.throws.length) fail('STALE', 'Scores changed on another device — refreshed.');
+    if (body.action === 'dartsThrow') {
+      var g = st.game, count = st.throws.length;
+      if (count >= g.teams.length * g.dartsPerTurn * g.rounds) fail('INVALID', 'The game is over.');
+      var hin = String(body.hit || '').toUpperCase();
+      var hit = hin === 'MISS' || hin === 'BULL' ? hin : Number(hin);
+      if (typeof hit === 'number' && !(hit >= 1 && hit <= 20 && hit === Math.floor(hit))) fail('INVALID', 'Pick a number from 1 to 20.');
+      var zone = typeof hit === 'number' ? (body.zone === 'in' ? 'in' : body.zone === 'out' ? 'out' : '') : '';
+      if (typeof hit === 'number' && !zone) fail('INVALID', 'Choose inside or outside the ring.');
+      st.throws.push({ t: Math.floor(count / g.dartsPerTurn) % g.teams.length, h: hit, z: zone, p: dartsPoints(hit, zone, g.bullPoints), at: new Date().toISOString() });
+      return dartsSave(st);
+    }
+    if (body.action === 'dartsUndo') {
+      if (!st.throws.length) fail('INVALID', 'Nothing to undo.');
+      st.throws.pop();
+      return dartsSave(st);
+    }
+    fail('INVALID', 'Unknown action.');
+  }
+
+  // ---- global teams (mirrors teams_ in Code.gs) ----
+  var TEAMS_KEY = 'ravan_local_teams_v1';
+  function teamsLoad() {
+    try { var s = JSON.parse(localStorage.getItem(TEAMS_KEY)); if (s && s.teams) return s; } catch (e) {}
+    return { teams: [], v: 0 };
+  }
+  function resolveTeams(ids) {
+    if (!Array.isArray(ids)) fail('INVALID', 'Pick the teams that are playing.');
+    var byId = {};
+    teamsLoad().teams.forEach(function (x) { byId[x.id] = x.name; });
+    var seen = {}, names = [], out = [];
+    ids.forEach(function (id) {
+      id = String(id);
+      if (!byId[id]) fail('INVALID', 'A selected team no longer exists — refresh the team list.');
+      if (seen[id]) return;
+      seen[id] = 1; out.push(id); names.push(byId[id]);
+    });
+    return { ids: out, names: names };
+  }
+  function teamsAction(body, db, t) {
+    var st = teamsLoad();
+    if (body.action === 'teamsList') return st;
+    var exp = db.tokens[body.token];
+    if (!body.token || !exp || exp < t) fail('AUTH', 'Please enter the scorer PIN again.');
+    if (body.action === 'teamsReset') {
+      st = { teams: [], v: (st.v || 0) + 1, updatedAt: new Date().toISOString() };
+      localStorage.setItem(TEAMS_KEY, JSON.stringify(st));
+      return st;
+    }
+    if (body.action !== 'teamsSave') fail('INVALID', 'Unknown action.');
+    if (+body.expect !== (st.v || 0)) fail('STALE', 'Teams changed on another device — refreshed.');
+    var list = Array.isArray(body.teams) ? body.teams : [];
+    if (list.length > 30) fail('INVALID', 'Up to 30 teams.');
+    var seen = {}, out = [];
+    list.forEach(function (x) {
+      var name = sanitize(x && x.name).slice(0, 30);
+      if (!name) return;
+      if (seen[name.toLowerCase()]) fail('INVALID', 'Team names must be different: ' + name);
+      seen[name.toLowerCase()] = 1;
+      out.push({ id: x && /^[a-f0-9]{8,32}$/.test(String(x.id || '')) ? String(x.id) : newId(), name: name });
+    });
+    st.teams = out; st.v = (st.v || 0) + 1; st.updatedAt = new Date().toISOString();
+    localStorage.setItem(TEAMS_KEY, JSON.stringify(st));
+    return st;
+  }
+
+  // ---- treasure hunt (mirrors hunt_ in Code.gs) ----
+  var HUNT_KEY = 'ravan_local_hunt_v1';
+  function hunt(body, db, t) {
+    var st;
+    try { st = JSON.parse(localStorage.getItem(HUNT_KEY)); } catch (e) {}
+    if (!st || !st.teams) st = { game: null, teams: [], v: 0 };
+    var nowIso = new Date().toISOString();
+    if (body.action === 'huntState') { st.now = nowIso; return st; }
+    var exp = db.tokens[body.token];
+    if (!body.token || !exp || exp < t) fail('AUTH', 'Please enter the scorer PIN again.');
+    var done = function () { st.v = (st.v || 0) + 1; st.updatedAt = nowIso; localStorage.setItem(HUNT_KEY, JSON.stringify(st)); st.now = nowIso; return st; };
+
+    if (body.action === 'huntNewGame') {
+      var pickedH = resolveTeams(body.teamIds), names = pickedH.names;
+      if (names.length < 1 || names.length > 20) fail('INVALID', 'Pick 1 to 20 teams.');
+      st = { game: { id: newId(), clues: [5, 10, 15, 20], bonus: [[300, 20], [600, 10]], startedAt: nowIso },
+        teams: names.map(function (n, i) { return { id: pickedH.ids[i], name: n, start: '', found: [] }; }), v: st.v || 0 };
+      return done();
+    }
+    if (body.action === 'huntReset') { st = { game: null, teams: [], v: st.v || 0 }; return done(); }
+    if (!st.game) fail('INVALID', 'Start a hunt first.');
+    if (+body.expect !== (st.v || 0)) fail('STALE', 'Updated on another device — refreshed.');
+    if (body.action === 'huntStart') {
+      var targets = body.team === 'all' ? st.teams.map(function (_, i) { return i; }) : [+body.team];
+      var n = 0;
+      targets.forEach(function (i) { var tm = st.teams[i]; if (tm && !tm.start) { tm.start = nowIso; n++; } });
+      if (!n) fail('INVALID', 'Already started.');
+      return done();
+    }
+    var team = st.teams[+body.team];
+    if (!team) fail('INVALID', 'Unknown team.');
+    if (body.action === 'huntClue') {
+      if (!team.start) fail('INVALID', 'Start the stopwatch for this team first.');
+      if (team.found.length >= 4) fail('INVALID', 'All clues already found.');
+      team.found.push(nowIso);
+      return done();
+    }
+    if (body.action === 'huntUndo') {
+      if (team.found.length) team.found.pop(); else if (team.start) team.start = ''; else fail('INVALID', 'Nothing to undo.');
+      return done();
+    }
+    fail('INVALID', 'Unknown action.');
   }
 
   /* Same contract as a network call: resolves with data, rejects with {message, code}. */

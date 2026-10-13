@@ -50,9 +50,28 @@ var DEMO = [
   ['distraction', 'Doom-scrolling reels till 1 AM.']
 ];
 
+/**
+ * The spreadsheet that holds all data.
+ * Uses the sheet this script is attached to (Extensions → Apps Script). If the script
+ * was created on its own at script.google.com, set Script Property SPREADSHEET_ID to
+ * the long id in the sheet's URL: docs.google.com/spreadsheets/d/<SPREADSHEET_ID>/edit
+ */
+function ss_() {
+  var id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  if (id) return SpreadsheetApp.openById(id.trim());
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) fail_('CONFIG', 'No spreadsheet: attach this script to a Google Sheet or set the SPREADSHEET_ID script property.');
+  return ss;
+}
+
+/** Run from the editor to print the link of the sheet this backend writes to. */
+function whereIsMySheet() {
+  Logger.log('Data is stored in: ' + ss_().getUrl());
+}
+
 /** Run once from the editor. Creates the sheet + headers and forces plain-text columns. */
 function setup() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = ss_();
   var sh = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
   sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
   sh.setFrozenRows(1);
@@ -93,6 +112,9 @@ function handle_(body) {
   }
   if (action === 'submit') return submit_(body, eventId);
   if (action === 'login') return login_(body);
+  if (action.indexOf('darts') === 0) return darts_(action, body);
+  if (action.indexOf('hunt') === 0) return hunt_(action, body);
+  if (action.indexOf('teams') === 0) return teams_(action, body);
 
   requireAdmin_(body.token);
 
@@ -197,9 +219,268 @@ function requireAdmin_(token) {
   }
 }
 
+// ---------- darts scoreboard ----------
+/*
+ * Scoring (per dart, numbers 1–20):
+ *   odd  outside the ring → −n      odd  inside the ring → −n/2
+ *   even outside the ring → +n      even inside the ring → +2n
+ *   MISS → 0, BULL → the game's bullPoints setting
+ * The whole game lives as one JSON value in cell A1 of the "Darts" tab; finished or
+ * replaced games are appended below it as history. Scores are computed here only.
+ */
+var DARTS_SHEET = 'Darts';
+var DARTS_CACHE = 'darts_state';
+
+function dartsPoints_(hit, zone, bullPoints) {
+  if (hit === 'MISS') return 0;
+  if (hit === 'BULL') return Number(bullPoints) || 0;
+  var n = Number(hit);
+  if (n % 2) return zone === 'in' ? -n / 2 : -n;
+  return zone === 'in' ? n * 2 : n;
+}
+
+/* Small JSON document stores: one JSON value in cell A1 of a tab, cached for fast reads. */
+function jsonSheet_(name) {
+  var ss = ss_();
+  return ss.getSheetByName(name) || ss.insertSheet(name);
+}
+function jsonRead_(name, cacheKey, empty) {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get(cacheKey);
+  if (hit) return JSON.parse(hit);
+  var raw = String(jsonSheet_(name).getRange('A1').getValue() || '');
+  var st = raw ? JSON.parse(raw) : empty;
+  cache.put(cacheKey, JSON.stringify(st), 21600);
+  return st;
+}
+function jsonWrite_(name, cacheKey, st) {
+  st.updatedAt = new Date().toISOString();
+  var json = JSON.stringify(st);
+  if (json.length > 45000) fail_('INVALID', 'Game is too long — start a new game.');
+  jsonSheet_(name).getRange('A1').setNumberFormat('@').setValue(json);
+  CacheService.getScriptCache().put(cacheKey, json, 21600);
+  return st;
+}
+function dartsSheet_() { return jsonSheet_(DARTS_SHEET); }
+function dartsRead_() { return jsonRead_(DARTS_SHEET, DARTS_CACHE, { game: null, throws: [] }); }
+function dartsWrite_(st) { return jsonWrite_(DARTS_SHEET, DARTS_CACHE, st); }
+
+function dartsTurn_(game, count) {
+  var perRound = game.teams.length * game.dartsPerTurn;
+  var total = perRound * game.rounds;
+  return { over: count >= total, team: Math.floor(count / game.dartsPerTurn) % game.teams.length };
+}
+
+function requireDarts_(token) {
+  var cache = CacheService.getScriptCache();
+  var ok = token && /^[a-f0-9-]{40,80}$/i.test(String(token)) && (cache.get('dtok_' + token) || cache.get('tok_' + token));
+  if (!ok) fail_('AUTH', 'Please enter the scorer PIN again.');
+}
+
+function darts_(action, body) {
+  if (action === 'dartsState') return dartsRead_();
+
+  if (action === 'dartsLogin') {
+    var cache = CacheService.getScriptCache();
+    var fails = Number(cache.get('darts_fails') || 0);
+    if (fails >= 10) fail_('RATE', 'Too many attempts. Wait 10 minutes.');
+    var props = PropertiesService.getScriptProperties();
+    var expected = props.getProperty('DARTS_PIN') || props.getProperty('ADMIN_PASSWORD');
+    if (!expected) fail_('DENIED', 'Scorer PIN not configured.');
+    if (!constantTimeEquals_(String(body.pin || ''), expected)) {
+      cache.put('darts_fails', String(fails + 1), 600);
+      Utilities.sleep(400);
+      fail_('DENIED', 'Wrong PIN.');
+    }
+    var token = Utilities.getUuid() + Utilities.getUuid().replace(/-/g, '');
+    cache.put('dtok_' + token, '1', TOKEN_TTL_SEC);
+    return { token: token };
+  }
+
+  requireDarts_(body.token);
+
+  return withLock_(function () {
+    CacheService.getScriptCache().remove(DARTS_CACHE); // always read the sheet inside the lock
+    var st = dartsRead_();
+
+    if (action === 'dartsNewGame') {
+      var picked = resolveTeams_(body.teamIds);
+      var teams = picked.names;
+      if (teams.length < 2 || teams.length > 12) fail_('INVALID', 'Pick 2 to 12 teams.');
+      var rounds = Math.round(Number(body.rounds)), per = Math.round(Number(body.dartsPerTurn));
+      var bull = Number(body.bullPoints) || 0;
+      if (!(rounds >= 1 && rounds <= 20)) fail_('INVALID', 'Rounds must be 1–20.');
+      if (!(per >= 1 && per <= 6)) fail_('INVALID', 'Darts per turn must be 1–6.');
+      if (!(bull >= -100 && bull <= 100)) fail_('INVALID', 'Bullseye points must be between −100 and 100.');
+      if (st.game) dartsSheet_().appendRow([JSON.stringify(st)]); // keep history
+      return dartsWrite_({ game: { id: newId_(), teams: teams, teamIds: picked.ids, rounds: rounds, dartsPerTurn: per, bullPoints: bull,
+        startedAt: new Date().toISOString() }, throws: [] });
+    }
+
+    // test reset: wipes ONLY the Darts tab (current game + history); Ravan Box data is untouched
+    if (action === 'dartsReset') {
+      dartsSheet_().clearContents();
+      return dartsWrite_({ game: null, throws: [] });
+    }
+
+    if (!st.game) fail_('INVALID', 'Start a game first.');
+    // optimistic concurrency: the phone says how many darts it has seen
+    if (Number(body.expect) !== st.throws.length) {
+      var e = new Error('Scores changed on another device — refreshed.'); e.code = 'STALE'; throw e;
+    }
+
+    if (action === 'dartsThrow') {
+      var turn = dartsTurn_(st.game, st.throws.length);
+      if (turn.over) fail_('INVALID', 'The game is over.');
+      var hitIn = String(body.hit || '').toUpperCase();
+      var hit = hitIn === 'MISS' || hitIn === 'BULL' ? hitIn : Number(hitIn);
+      if (typeof hit === 'number' && !(hit >= 1 && hit <= 20 && hit === Math.floor(hit))) fail_('INVALID', 'Pick a number from 1 to 20.');
+      var zone = typeof hit === 'number' ? (body.zone === 'in' ? 'in' : body.zone === 'out' ? 'out' : '') : '';
+      if (typeof hit === 'number' && !zone) fail_('INVALID', 'Choose inside or outside the ring.');
+      st.throws.push({ t: turn.team, h: hit, z: zone, p: dartsPoints_(hit, zone, st.game.bullPoints), at: new Date().toISOString() });
+      return dartsWrite_(st);
+    }
+
+    if (action === 'dartsUndo') {
+      if (!st.throws.length) fail_('INVALID', 'Nothing to undo.');
+      st.throws.pop();
+      return dartsWrite_(st);
+    }
+
+    fail_('INVALID', 'Unknown action.');
+  });
+}
+
+// ---------- treasure hunt leaderboard ----------
+/*
+ * Clues are found in order: Clue 1 +5, Clue 2 +10, Clue 3 +15, Final +20.
+ * Each team has its own stopwatch (started by the scorer). Finishing every clue
+ * within 5:00 earns +20, within 10:00 earns +10. Times use the server clock.
+ * Ranking: points, then faster finish.
+ */
+var HUNT_SHEET = 'Hunt';
+var HUNT_CACHE = 'hunt_state';
+var HUNT_CLUES = [5, 10, 15, 20];
+var HUNT_BONUS = [[300, 20], [600, 10]]; // [within seconds, points]
+
+function huntRead_() { return jsonRead_(HUNT_SHEET, HUNT_CACHE, { game: null, teams: [], v: 0 }); }
+
+function hunt_(action, body) {
+  if (action === 'huntState') { var st0 = huntRead_(); st0.now = new Date().toISOString(); return st0; }
+
+  requireDarts_(body.token); // same scorer PIN as darts
+
+  return withLock_(function () {
+    CacheService.getScriptCache().remove(HUNT_CACHE);
+    var st = huntRead_();
+    var nowIso = new Date().toISOString();
+    var done = function () { st.v = (st.v || 0) + 1; var out = jsonWrite_(HUNT_SHEET, HUNT_CACHE, st); out.now = nowIso; return out; };
+
+    if (action === 'huntNewGame') {
+      var pickedH = resolveTeams_(body.teamIds);
+      var names = pickedH.names;
+      if (names.length < 1 || names.length > 20) fail_('INVALID', 'Pick 1 to 20 teams.');
+      if (st.game) jsonSheet_(HUNT_SHEET).appendRow([JSON.stringify(st)]); // keep history
+      st = { game: { id: newId_(), clues: HUNT_CLUES, bonus: HUNT_BONUS, startedAt: nowIso },
+        teams: names.map(function (n, i) { return { id: pickedH.ids[i], name: n, start: '', found: [] }; }), v: st.v || 0 };
+      return done();
+    }
+
+    // test reset: wipes ONLY the Hunt tab (current hunt + history)
+    if (action === 'huntReset') {
+      jsonSheet_(HUNT_SHEET).clearContents();
+      st = { game: null, teams: [], v: st.v || 0 };
+      return done();
+    }
+
+    if (!st.game) fail_('INVALID', 'Start a hunt first.');
+    if (Number(body.expect) !== (st.v || 0)) { var e = new Error('Updated on another device — refreshed.'); e.code = 'STALE'; throw e; }
+
+    if (action === 'huntStart') {
+      var targets = body.team === 'all' ? st.teams.map(function (_, i) { return i; }) : [Number(body.team)];
+      var started = 0;
+      targets.forEach(function (i) { var t = st.teams[i]; if (t && !t.start) { t.start = nowIso; started++; } });
+      if (!started) fail_('INVALID', 'Already started.');
+      return done();
+    }
+
+    var team = st.teams[Number(body.team)];
+    if (!team) fail_('INVALID', 'Unknown team.');
+
+    if (action === 'huntClue') {
+      if (!team.start) fail_('INVALID', 'Start the stopwatch for this team first.');
+      if (team.found.length >= HUNT_CLUES.length) fail_('INVALID', 'All clues already found.');
+      team.found.push(nowIso);
+      return done();
+    }
+
+    if (action === 'huntUndo') {
+      if (team.found.length) team.found.pop();
+      else if (team.start) team.start = '';
+      else fail_('INVALID', 'Nothing to undo.');
+      return done();
+    }
+
+    fail_('INVALID', 'Unknown action.');
+  });
+}
+
+// ---------- global teams (shared by darts + treasure hunt) ----------
+var TEAMS_SHEET = 'Teams';
+var TEAMS_CACHE = 'teams_state';
+
+function teamsRead_() { return jsonRead_(TEAMS_SHEET, TEAMS_CACHE, { teams: [], v: 0 }); }
+
+/* Turn selected team ids into names, in the order given. */
+function resolveTeams_(ids) {
+  if (!Array.isArray(ids)) fail_('INVALID', 'Pick the teams that are playing.');
+  var byId = {};
+  teamsRead_().teams.forEach(function (t) { byId[t.id] = t.name; });
+  var seen = {}, names = [], out = [];
+  ids.forEach(function (id) {
+    id = String(id);
+    if (!byId[id]) fail_('INVALID', 'A selected team no longer exists — refresh the team list.');
+    if (seen[id]) return;
+    seen[id] = 1; out.push(id); names.push(byId[id]);
+  });
+  return { ids: out, names: names };
+}
+
+function teams_(action, body) {
+  if (action === 'teamsList') return teamsRead_();
+  requireDarts_(body.token);
+  return withLock_(function () {
+    CacheService.getScriptCache().remove(TEAMS_CACHE);
+    var st = teamsRead_();
+    // test reset: wipes ONLY the Teams tab
+    if (action === 'teamsReset') {
+      jsonSheet_(TEAMS_SHEET).clearContents();
+      return jsonWrite_(TEAMS_SHEET, TEAMS_CACHE, { teams: [], v: (st.v || 0) + 1 });
+    }
+    if (action === 'teamsSave') {
+      if (Number(body.expect) !== (st.v || 0)) { var e = new Error('Teams changed on another device — refreshed.'); e.code = 'STALE'; throw e; }
+      var list = Array.isArray(body.teams) ? body.teams : [];
+      if (list.length > 30) fail_('INVALID', 'Up to 30 teams.');
+      var seen = {}, out = [];
+      list.forEach(function (t) {
+        var name = sanitize_(t && t.name).slice(0, 30);
+        if (!name) return;
+        if (seen[name.toLowerCase()]) fail_('INVALID', 'Team names must be different: ' + name);
+        seen[name.toLowerCase()] = 1;
+        var id = t && /^[a-f0-9]{8,32}$/.test(String(t.id || '')) ? String(t.id) : newId_();
+        out.push({ id: id, name: name });
+      });
+      st.teams = out;
+      st.v = (st.v || 0) + 1;
+      return jsonWrite_(TEAMS_SHEET, TEAMS_CACHE, st);
+    }
+    fail_('INVALID', 'Unknown action.');
+  });
+}
+
 // ---------- sheet helpers ----------
 function sheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = ss_();
   var sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) { setup(); sh = ss.getSheetByName(SHEET_NAME); }
   return sh;

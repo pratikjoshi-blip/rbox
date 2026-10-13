@@ -47,6 +47,16 @@
     });
   }
 
+  // The scorer stays signed in on the phone (localStorage), separate from the admin session
+  var DARTS_KEY = 'ravan_darts_token';
+  function dartsToken() { try { return localStorage.getItem(DARTS_KEY) || ''; } catch (e) { return ''; } }
+  function darts(action, payload) {
+    return call(action, Object.assign({ token: dartsToken() }, payload || {})).catch(function (err) {
+      if (err.code === 'AUTH') { try { localStorage.removeItem(DARTS_KEY); } catch (e) {} }
+      throw err;
+    });
+  }
+
   window.RavanAPI = {
     isLocal: function () { return !endpoint(); },
     status: function () { return call('status'); },
@@ -70,6 +80,34 @@
     markBurned: function () { return admin('markBurned'); },
     resetCeremony: function (toState) { return admin('resetCeremony', { toState: toState || 'SUBMISSIONS_OPEN' }); },
     generateDemo: function (count) { return admin('generateDemo', { count: count }); },
-    clearDemo: function () { return admin('clearDemo'); }
+    clearDemo: function () { return admin('clearDemo'); },
+
+    // ---- darts scoreboard ----
+    dartsState: function () { return call('dartsState'); },
+    dartsLogin: function (pin) {
+      return call('dartsLogin', { pin: pin }).then(function (d) {
+        try { localStorage.setItem(DARTS_KEY, d.token); } catch (e) {}
+        return d;
+      });
+    },
+    dartsHasToken: function () { return !!dartsToken(); },
+    dartsLogout: function () { try { localStorage.removeItem(DARTS_KEY); } catch (e) {} },
+    dartsNewGame: function (cfgGame) { return darts('dartsNewGame', cfgGame); },
+
+    // ---- global teams (shared by darts + hunt) ----
+    teamsList: function () { return call('teamsList'); },
+    teamsSave: function (expect, teams) { return darts('teamsSave', { expect: expect, teams: teams }); },
+    teamsReset: function () { return darts('teamsReset'); },
+    dartsReset: function () { return darts('dartsReset'); },
+    huntReset: function () { return darts('huntReset'); },
+    dartsThrow: function (expect, hit, zone) { return darts('dartsThrow', { expect: expect, hit: hit, zone: zone }); },
+    dartsUndo: function (expect) { return darts('dartsUndo', { expect: expect }); },
+
+    // ---- treasure hunt (same scorer PIN/session as darts) ----
+    huntState: function () { return call('huntState'); },
+    huntNewGame: function (teamIds) { return darts('huntNewGame', { teamIds: teamIds }); },
+    huntStart: function (expect, team) { return darts('huntStart', { expect: expect, team: team }); },
+    huntClue: function (expect, team) { return darts('huntClue', { expect: expect, team: team }); },
+    huntUndo: function (expect, team) { return darts('huntUndo', { expect: expect, team: team }); }
   };
 })();

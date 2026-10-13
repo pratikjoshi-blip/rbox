@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#12050a">
+  <title>Treasure Hunt Scorer</title>
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/base.css?v=20261013b">
+  <link rel="stylesheet" href="../../css/darts.css?v=20261013b">
+</head>
+<body>
+  <div class="scorer">
+    <header class="sc-head">
+      <h1 class="display"><span aria-hidden="true">🗺️</span> <span class="gold-text">TREASURE HUNT</span></h1>
+      <div class="sc-menu" id="menu" hidden>
+        <a class="btn btn-ghost btn-sm" href="../" target="_blank" rel="noopener">📺 TV</a>
+        <button class="btn btn-ghost btn-sm" type="button" id="newBtn">New hunt</button>
+      </div>
+    </header>
+
+    <section class="view card" id="vLogin" hidden>
+      <h2>Scorer sign-in</h2>
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label for="pin">Scorer PIN</label>
+          <input class="inp" id="pin" type="password" required autocomplete="current-password">
+          <small>Same PIN as the darts scorer (<b>DARTS_PIN</b>, or the admin password).</small>
+        </div>
+        <button class="btn btn-gold wide" type="submit" id="loginBtn">Start scoring</button>
+        <p class="msg" id="loginMsg" hidden></p>
+      </form>
+    </section>
+
+    <section class="view" id="vSetup" hidden>
+      <form class="card" id="setupForm" autocomplete="off">
+        <h2>New treasure hunt</h2>
+        <div class="field">
+          <span class="lbl">Teams taking part</span>
+          <div id="teamPicker"></div>
+        </div>
+        <p class="note">Clue 1 +5 · Clue 2 +10 · Clue 3 +15 · Final +20. All clues within 5 min: +20 bonus · within 10 min: +10 bonus. Ties: faster team wins.</p>
+        <button class="btn btn-gold wide" type="submit" id="startBtn" style="margin-top:12px">🗺️ Create hunt</button>
+        <button class="btn btn-ghost btn-sm wide" type="button" id="cancelSetup" style="margin-top:8px" hidden>Back to current hunt</button>
+        <p class="msg" id="setupMsg" hidden></p>
+      </form>
+    </section>
+
+    <section class="view" id="vPlay" hidden>
+      <button class="btn btn-gold wide" type="button" id="startAll" hidden>⏱ Start all stopwatches</button>
+      <div id="teams" style="margin-top:12px"></div>
+      <div class="actions"><button class="btn btn-ghost" type="button" id="refreshBtn" style="grid-column:1/-1">↻ Refresh</button></div>
+    </section>
+    <section class="card danger-zone" id="dangerZone" hidden>
+      <h2>🧪 Testing</h2>
+      <p class="note" style="margin:0 0 12px">Wipes only the treasure hunt (current hunt + history). Ravan Box chits, teams and darts are never touched.</p>
+      <button class="btn btn-danger btn-sm wide" type="button" id="resetBtn">🧹 Reset treasure hunt</button>
+    </section>
+  </div>
+  <div class="saving" id="saving" role="status" aria-live="polite" hidden></div>
+
+  <script src="../../js/config.js?v=20261013b"></script>
+  <script src="../../js/local-backend.js?v=20261013b"></script>
+  <script src="../../js/api.js?v=20261013b"></script>
+  <script src="../../js/team-picker.js?v=20261013b"></script>
+  <script src="../../js/hunt.js?v=20261013b"></script>
+  <script src="../../js/hunt-score.js?v=20261013b"></script>
+</body>
+</html>

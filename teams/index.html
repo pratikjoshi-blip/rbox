@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#12050a">
+  <title>Event Teams</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/base.css?v=20261013b">
+  <link rel="stylesheet" href="../css/darts.css?v=20261013b">
+</head>
+<body>
+  <div class="scorer">
+    <header class="sc-head">
+      <h1 class="display"><span aria-hidden="true">👥</span> <span class="gold-text">EVENT TEAMS</span></h1>
+    </header>
+
+    <section class="view card" id="vLogin" hidden>
+      <h2>Scorer sign-in</h2>
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label for="pin">Scorer PIN</label>
+          <input class="inp" id="pin" type="password" required autocomplete="current-password">
+          <small>Same PIN as the darts and treasure hunt scorer.</small>
+        </div>
+        <button class="btn btn-gold wide" type="submit" id="loginBtn">Continue</button>
+        <p class="msg" id="loginMsg" hidden></p>
+      </form>
+    </section>
+
+    <section class="view" id="vTeams" hidden>
+      <form class="card" id="teamsForm" autocomplete="off">
+        <h2>Teams for every game</h2>
+        <p class="note" style="margin:0 0 12px">Create the teams once — darts and the treasure hunt both pick from this list. Games already running keep the names they started with.</p>
+        <div id="teamList"></div>
+        <button class="btn btn-ghost btn-sm" type="button" id="addTeam">+ Add team</button>
+        <button class="btn btn-gold wide" type="submit" id="saveBtn" style="margin-top:14px">💾 Save teams</button>
+        <p class="msg" id="saveMsg" hidden></p>
+      </form>
+      <div class="hub">
+        <a class="btn btn-ghost btn-sm" href="../darts/score/">🎯 Darts scorer</a>
+        <a class="btn btn-ghost btn-sm" href="../hunt/score/">🗺️ Hunt scorer</a>
+      </div>
+      <section class="card danger-zone">
+        <h2>🧪 Testing</h2>
+        <p class="note" style="margin:0 0 12px">Deletes every team from the list. Games already created keep their names. Ravan Box chits are never touched.</p>
+        <button class="btn btn-danger btn-sm wide" type="button" id="resetBtn">🧹 Delete all teams</button>
+      </section>
+    </section>
+  </div>
+  <div class="saving" id="saving" role="status" aria-live="polite" hidden></div>
+
+  <script src="../js/config.js?v=20261013b"></script>
+  <script src="../js/local-backend.js?v=20261013b"></script>
+  <script src="../js/api.js?v=20261013b"></script>
+  <script>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var version = 0, dirty = false;
+      function el(tag, className, text) { var e = document.createElement(tag); if (className) e.className = className; if (text != null) e.textContent = text; return e; }
+      var ft;
+      function flash(t, err) { var s = $('saving'); s.textContent = t; s.classList.toggle('err', !!err); s.hidden = false; clearTimeout(ft); ft = setTimeout(function () { s.hidden = true; }, 2000); }
+      function views(n) { ['vLogin', 'vTeams'].forEach(function (v) { $(v).hidden = v !== n; }); }
+
+      function refreshArrows() {
+        var rows = $('teamList').children;
+        Array.prototype.forEach.call(rows, function (r, i) {
+          r.querySelector('.up').disabled = i === 0;
+          r.querySelector('.down').disabled = i === rows.length - 1;
+        });
+      }
+      function row(team) {
+        var r = el('div', 'tm-row');
+        r.dataset.id = team.id || '';
+        var inp = el('input', 'inp'); inp.maxLength = 30; inp.value = team.name || ''; inp.placeholder = 'Team name';
+        inp.setAttribute('aria-label', 'Team name');
+        inp.addEventListener('input', function () { dirty = true; });
+        var up = el('button', 'icon-btn up', '↑'); up.type = 'button'; up.setAttribute('aria-label', 'Move up');
+        var down = el('button', 'icon-btn down', '↓'); down.type = 'button'; down.setAttribute('aria-label', 'Move down');
+        var rm = el('button', 'icon-btn', '×'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove team');
+        up.addEventListener('click', function () { if (r.previousElementSibling) { r.parentNode.insertBefore(r, r.previousElementSibling); dirty = true; refreshArrows(); up.focus(); } });
+        down.addEventListener('click', function () { if (r.nextElementSibling) { r.parentNode.insertBefore(r.nextElementSibling, r); dirty = true; refreshArrows(); down.focus(); } });
+        rm.addEventListener('click', function () {
+          if (inp.value.trim() && !window.confirm('Remove ' + inp.value.trim() + ' from the team list?')) return;
+          r.remove(); dirty = true; refreshArrows();
+        });
+        r.appendChild(inp); r.appendChild(up); r.appendChild(down); r.appendChild(rm);
+        return r;
+      }
+      function fill(st) {
+        version = st.v || 0;
+        var list = $('teamList'); list.textContent = '';
+        var teams = st.teams && st.teams.length ? st.teams : [{ name: 'Team Ram' }, { name: 'Team Lakshman' }, { name: 'Team Hanuman' }, { name: 'Team Sita' }];
+        teams.forEach(function (t) { list.appendChild(row(t)); });
+        dirty = !(st.teams && st.teams.length); // unsaved suggestions
+        refreshArrows();
+        views('vTeams');
+      }
+      function load() { return RavanAPI.teamsList().then(fill).catch(function () { flash('Could not load teams', true); }); }
+
+      $('addTeam').addEventListener('click', function () {
+        if ($('teamList').children.length >= 30) return;
+        var r = row({}); $('teamList').appendChild(r); refreshArrows(); r.querySelector('input').focus(); dirty = true;
+      });
+      $('teamsForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        $('saveMsg').hidden = true;
+        var teams = Array.prototype.map.call($('teamList').children, function (r) { return { id: r.dataset.id, name: r.querySelector('input').value.trim() }; })
+          .filter(function (t) { return t.name; });
+        $('saveBtn').disabled = true;
+        RavanAPI.teamsSave(version, teams).then(function (st) { fill(st); flash('Teams saved ✓'); })
+          .catch(function (err) {
+            if (err.code === 'AUTH') { views('vLogin'); return; }
+            if (err.code === 'STALE') { flash('Teams were changed elsewhere — reloaded', true); return load(); }
+            $('saveMsg').textContent = err.message; $('saveMsg').hidden = false;
+          })
+          .finally(function () { $('saveBtn').disabled = false; });
+      });
+      window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+      $('loginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        $('loginBtn').disabled = true; $('loginMsg').hidden = true;
+        RavanAPI.dartsLogin($('pin').value).then(function () { $('pin').value = ''; return load(); })
+          .catch(function (err) { $('loginMsg').textContent = err.code === 'DENIED' || err.code === 'RATE' ? err.message : 'Could not reach the server.'; $('loginMsg').hidden = false; })
+          .finally(function () { $('loginBtn').disabled = false; });
+      });
+
+      $('resetBtn').addEventListener('click', function () {
+        var typed = window.prompt('Type RESET to delete every team from the list.');
+        if (typed === null) return;
+        if (typed.trim().toUpperCase() !== 'RESET') { flash('Not reset — type RESET exactly', true); return; }
+        RavanAPI.teamsReset().then(function (st) { dirty = false; fill(st); flash('All teams deleted'); })
+          .catch(function (err) { if (err.code === 'AUTH') views('vLogin'); else flash(err.message, true); });
+      });
+
+      if (RavanAPI.dartsHasToken()) load(); else views('vLogin');
+    })();
+  </script>
+</body>
+</html>

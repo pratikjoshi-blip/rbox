@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" class="tv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0c0306">
+  <title>Ravan Darts</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/base.css?v=20261013b">
+  <link rel="stylesheet" href="../css/darts.css?v=20261013b">
+</head>
+<body class="tv">
+  <canvas class="tv-canvas" id="fireCanvas" aria-hidden="true"></canvas>
+  <div class="tv-stage">
+    <header class="tv-head">
+      <div>
+        <h1 class="display"><span aria-hidden="true">🎯</span> <span class="gold-text">RAVAN DARTS</span></h1>
+        <p class="sub" id="tvSub">DUSSEHRA 2026 · TEAM SCOREBOARD</p>
+      </div>
+      <div class="tv-status"><span class="live" id="liveDot"></span><span id="liveText">Live</span></div>
+    </header>
+
+    <main class="tv-main">
+      <section class="board" id="board" aria-label="Team standings" aria-live="polite"></section>
+      <aside class="side">
+        <div class="now-card">
+          <div class="lbl">NOW THROWING</div>
+          <div class="who" id="nowTeam">—</div>
+          <div class="info" id="nowInfo"></div>
+          <div class="dots" id="nowDots"></div>
+        </div>
+        <div class="feed">
+          <h2>LATEST DARTS</h2>
+          <ol id="feed"></ol>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="rules" aria-label="Scoring rules">
+      <span><b>Even</b> number: <span class="pos">+n</span> · inside the ring <span class="pos">+2n</span></span>
+      <span><b>Odd</b> number: <span class="neg">−n</span> · inside the ring <span class="neg">−n/2</span></span>
+      <span><b>Miss</b>: 0</span>
+      <span id="bullRule"></span>
+    </footer>
+  </div>
+
+  <div class="tv-empty" id="tvEmpty" hidden>
+    <h2 class="display"><span class="gold-text">RAVAN DARTS</span></h2>
+    <p>Waiting for the scorer to start a game…</p>
+  </div>
+  <div class="winner" id="winner" hidden aria-live="polite">
+    <p class="trophy" aria-hidden="true">🏆</p>
+    <p class="wins" id="winLabel">WINNER</p>
+    <h2 class="display"><span class="gold-text" id="winName"></span></h2>
+    <div class="final" id="finalBoard"></div>
+  </div>
+
+  <script src="../js/config.js?v=20261013b"></script>
+  <script src="../js/local-backend.js?v=20261013b"></script>
+  <script src="../js/api.js?v=20261013b"></script>
+  <script src="../js/fire.js?v=20261013b"></script>
+  <script src="../js/darts.js?v=20261013b"></script>
+  <script src="../js/darts-board.js?v=20261013b"></script>
+</body>
+</html>

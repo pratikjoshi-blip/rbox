@@ -118,6 +118,8 @@ Only those fields are stored. There are no names, emails, phone numbers, IP addr
 7. Paste that URL into `js/config.js` → `API_URL: 'https://script.google.com/macros/s/…/exec'`.
 8. Check it works: open the `/exec` URL in a browser. You should see `{"ok":true,"data":{"service":"digital-ravan-box",…}}`.
 
+> **Can't find the sheet?** In the Apps Script editor, run **`whereIsMySheet`**. The Execution log prints the link to the sheet the backend writes to. If the script was created on its own at script.google.com rather than from a sheet, create a Google Sheet and add a Script Property **`SPREADSHEET_ID`**. Its value is the long id in the sheet's URL: `docs.google.com/spreadsheets/d/<SPREADSHEET_ID>/edit`. Then run `setup` once.
+>
 > **If you edit `Code.gs` later:** **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy.** This keeps the same URL. Saving the code alone does not update the live API.
 >
 > **Company Google Workspace accounts:** some Workspace admins don't allow "Anyone" access. If you can't choose it, create the Sheet and script with a personal Gmail account instead.
@@ -191,6 +193,71 @@ Everything uses relative paths, so the site works under the `/ravan-box/` sub-pa
 - The QR code points to `PUBLIC_URL` if you set one; otherwise it points to the address the site is hosted at. Generate the QR code **from the deployed GitHub Pages site**, not from `localhost`.
 
 ---
+
+## 👥 Event teams (shared by darts + treasure hunt)
+
+Create the teams once at **`/teams/`**, using the scorer PIN. You can add, rename, reorder and remove them there. When you start a darts game or a treasure hunt, you **tick which teams play** from this list. For darts, the order you tick them is the throwing order. Both games use the same team names, and the server looks the names up from this list.
+
+A game keeps the names it started with, so renaming a team later doesn't change a game already in progress. The list is stored in a **`Teams`** tab of the Sheet.
+
+## 🎯 Ravan Darts (team scoreboard)
+
+The darts scoreboard is part of the same site and uses the same Google Sheet. It has two pages:
+
+| Page | Used on | Purpose |
+|---|---|---|
+| `/darts/score/` | Scorekeeper's phone | Sign in with a PIN, pick the teams from the shared list (in throwing order), then tap the number hit and **Inside / Outside the ring**. **Undo last** fixes mistakes. |
+| `/darts/` | TV or projector | Read-only live board: ranked teams, who's throwing now, the latest darts, and a winner reveal. `F` or a double-click toggles fullscreen. |
+
+**Scoring** (calculated on the server, so the phone and the TV always agree):
+
+| Dart lands on | Outside the ring | Inside the ring |
+|---|---|---|
+| Odd number | −n | −n ÷ 2 |
+| Even number | +n | +2n |
+| Miss | 0 | 0 |
+| Bullseye | the "Bullseye pts" setting chosen when starting the game | |
+
+Teams throw in the order entered, with the chosen number of darts per turn, for the chosen number of rounds. Equal scores share a rank and the winner screen shows a tie.
+
+**Setup (one time):**
+1. Paste the updated `backend/apps-script/Code.gs` into Apps Script and save.
+2. **Deploy → Manage deployments → ✏️ → Version: New version → Deploy.** The URL stays the same.
+3. *(Optional)* Add a Script Property **`DARTS_PIN`** so the scorekeeper doesn't need the admin password. Without it, the admin password works as the PIN.
+
+Each game is stored as one JSON value in cell A1 of a **`Darts`** tab that is created automatically. When you start a new game, the old one is kept as history on the rows below.
+
+**Local test:** with `API_URL` empty, open `/darts/score/` and `/darts/` as two tabs in the same browser. The local PIN is `ravan2026`.
+
+**Testing on the live server:** each scorer page has a **🧪 Testing** box at the bottom, and you type `RESET` to confirm.
+- **Reset darts** wipes the `Darts` tab (current game and history).
+- **Reset treasure hunt** wipes the `Hunt` tab.
+- **Delete all teams** on `/teams/` wipes the `Teams` tab.
+
+Each one clears only its own tab. The Ravan Box `Submissions` tab and ceremony state are never touched. For the Ravan Box itself, use demo data and **Clear demo data**, or **Test ceremony** on the admin page, which saves nothing.
+
+## 🗺️ Treasure hunt (team leaderboard)
+
+| Page | Used on | Purpose |
+|---|---|---|
+| `/hunt/score/` | Scorekeeper's phone | Same PIN as darts. Create the hunt by picking teams from the shared list, **Start stopwatch** for a team (or **Start all**), then tap **Clue N found** as each clue comes in. **↶** undoes a team's last step. |
+| `/hunt/` | TV or projector | Live leaderboard: clue progress, running stopwatches, points, a pop-up for each clue found, and the winner once every team has finished. |
+
+**Points:**
+
+| Event | Points |
+|---|---|
+| Clue 1 / Clue 2 / Clue 3 / Final clue | +5 / +10 / +15 / +20 |
+| All clues found within 5:00 of the stopwatch start | +20 bonus |
+| All clues found within 10:00 | +10 bonus |
+
+- Clues are found in order.
+- Each team has its own stopwatch; the final clue stops it.
+- Exactly 5:00 or 10:00 still earns that bonus.
+- Equal points: the faster finish ranks higher.
+- Times use the **server clock**, so a phone's wrong time can't affect results.
+
+Data lives in cell A1 of a **`Hunt`** tab that is created automatically. Previous hunts are kept on the rows below. It needs the same `Code.gs` update and **New version** deploy as darts.
 
 ## Security notes
 
