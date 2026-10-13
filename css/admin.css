@@ -107,3 +107,4 @@ kbd { display: inline-block; min-width: 1.6em; padding: 0.05em 0.4em; border: 1p
   .card-share .qr-wrap { align-self: auto; }
   .card-share .public-url { text-align: left; flex: 1 1 200px; }
 }
+.admin .org-nav { margin: 0 -16px; }

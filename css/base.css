@@ -173,3 +173,27 @@ button.chit { cursor: pointer; }
   .ravan.react, .ravan.react .rv-crown { animation: none; }
   .is-fluttering .chit-paper { animation: none; }
 }
+
+/* ---------- organizer navigation (js/nav.js) ---------- */
+.org-nav {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 14px; min-height: 52px;
+  padding: max(6px, env(safe-area-inset-top)) 16px 6px;
+  background: rgba(18, 5, 10, 0.92); border-bottom: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.org-brand { flex: none; font: 900 1rem/1 var(--font-display); text-decoration: none; letter-spacing: 0.04em; white-space: nowrap; }
+.org-links { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; min-width: 0; padding: 2px; }
+.org-links::-webkit-scrollbar { display: none; }
+.org-link {
+  flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px;
+  border-radius: 999px; border: 1px solid transparent; color: var(--ink-2); text-decoration: none;
+  font: 600 0.85rem/1 var(--font-body); white-space: nowrap;
+}
+.org-link:hover { border-color: var(--line); color: var(--gold-light); }
+.org-link.is-active { background: var(--gold); color: #3a1406; border-color: var(--gold); }
+/* TV pages: overlay that slides in on mouse move */
+.org-nav-tv { position: fixed; left: 0; right: 0; top: 0; transform: translateY(-110%); transition: transform 0.3s ease; }
+.org-nav-tv.show, .org-nav-tv:focus-within { transform: none; }
+@media (max-width: 560px) { .org-brand .gold-text { display: none; } }
+@media print { .org-nav { display: none; } }
