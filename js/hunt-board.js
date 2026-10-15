@@ -3,7 +3,8 @@
   var $ = function (id) { return document.getElementById(id); };
   var H = window.RavanHunt;
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var POLL_MS = 2500;
+  // poll ~every 3 s while any team is running, every 12 s otherwise (stopwatches tick locally)
+  var POLL_LIVE = 3000, POLL_IDLE = 12000, pollMs = POLL_LIVE;
   var fire = new FireStage($('fireCanvas'));
   var st = null, offset = 0, prev = null, failures = 0, winnerShown = false;
 
@@ -108,10 +109,11 @@
   }
 
   function tick() {
-    if (document.hidden) return setTimeout(tick, POLL_MS);
+    if (document.hidden) return setTimeout(tick, POLL_IDLE);
     RavanAPI.huntState().then(function (s) {
       failures = 0; $('liveDot').classList.remove('off'); $('liveText').textContent = 'Live';
       if (s.now) offset = new Date(s.now).getTime() - Date.now();
+      pollMs = s.game && s.teams.some(function (t) { return t.start && t.found.length < s.game.clues.length; }) ? POLL_LIVE : POLL_IDLE;
       if (!st || s.v !== st.v || (s.game && st.game && s.game.id !== st.game.id) || !s.game !== !st.game) {
         prev = st; st = s;
         if (s.game) announce(prev, s);
@@ -120,7 +122,7 @@
     }).catch(function () {
       failures++;
       if (failures >= 2) { $('liveDot').classList.add('off'); $('liveText').textContent = 'Reconnecting…'; }
-    }).finally(function () { setTimeout(tick, POLL_MS); });
+    }).finally(function () { setTimeout(tick, failures ? Math.min(20000, POLL_LIVE * (1 + failures)) : pollMs); });
   }
   tick();
 

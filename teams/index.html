@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/base.css?v=20261013e">
-  <link rel="stylesheet" href="../css/darts.css?v=20261013e">
+  <link rel="stylesheet" href="../css/base.css?v=20261015a">
+  <link rel="stylesheet" href="../css/darts.css?v=20261015a">
 </head>
 <body>
   <div class="scorer">
@@ -54,10 +54,10 @@
   </div>
   <div class="saving" id="saving" role="status" aria-live="polite" hidden></div>
 
-  <script src="../js/nav.js?v=20261013e" data-base="../"></script>
-  <script src="../js/config.js?v=20261013e"></script>
-  <script src="../js/local-backend.js?v=20261013e"></script>
-  <script src="../js/api.js?v=20261013e"></script>
+  <script src="../js/nav.js?v=20261015a" data-base="../"></script>
+  <script src="../js/config.js?v=20261015a"></script>
+  <script src="../js/local-backend.js?v=20261015a"></script>
+  <script src="../js/api.js?v=20261015a"></script>
   <script>
     (function () {
       var $ = function (id) { return document.getElementById(id); };
@@ -113,13 +113,34 @@
         var teams = Array.prototype.map.call($('teamList').children, function (r) { return { id: r.dataset.id, name: r.querySelector('input').value.trim() }; })
           .filter(function (t) { return t.name; });
         $('saveBtn').disabled = true;
-        RavanAPI.teamsSave(version, teams).then(function (st) { fill(st); flash('Teams saved ✓'); })
-          .catch(function (err) {
-            if (err.code === 'AUTH') { views('vLogin'); return; }
-            if (err.code === 'STALE') { flash('Teams were changed elsewhere — reloaded', true); return load(); }
-            $('saveMsg').textContent = err.message; $('saveMsg').hidden = false;
-          })
-          .finally(function () { $('saveBtn').disabled = false; });
+        $('saveBtn').textContent = '⏳ Saving…';
+        var names = teams.map(function (t) { return t.name; }).join('|').toLowerCase();
+        var tries = 0, retried = false;
+        // Google can be slow or briefly busy: retry a few times. If a retry finds the list
+        // already matches (an earlier attempt got through), that counts as saved.
+        (function attempt() {
+          RavanAPI.teamsSave(version, teams).then(function (st) { fill(st); flash('Teams saved ✓'); done(); })
+            .catch(function (err) {
+              if (err.code === 'AUTH') { done(); views('vLogin'); return; }
+              if (err.code === 'STALE') {
+                return RavanAPI.teamsList().then(function (st) {
+                  var now = st.teams.map(function (t) { return t.name; }).join('|').toLowerCase();
+                  fill(st);
+                  if (retried && now === names) flash('Teams saved ✓'); else flash('Teams were changed on another device — reloaded, please check', true);
+                  done();
+                }, function () { done(); });
+              }
+              if (err.code === 'BUSY' && tries < 3) {
+                tries++; retried = true;
+                $('saveBtn').textContent = '⏳ Server busy — retrying (' + tries + '/3)…';
+                return setTimeout(attempt, 1500 * tries);
+              }
+              $('saveMsg').textContent = err.message + (err.code === 'BUSY' ? ' Your changes are still here — tap Save again.' : '');
+              $('saveMsg').hidden = false;
+              done();
+            });
+        })();
+        function done() { $('saveBtn').disabled = false; $('saveBtn').textContent = '💾 Save teams'; }
       });
       window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 

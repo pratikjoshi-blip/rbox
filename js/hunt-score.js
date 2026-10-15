@@ -26,12 +26,31 @@
     if (err && err.code === 'STALE') { flash('Updated from another device'); return load(); }
     flash((err && err.message) || 'Could not save — check the connection', true, 3200);
   }
+  /* fn(expectVersion) → Promise. Retries while Google is busy; if a retry is told the hunt
+     moved on exactly one step, the earlier attempt got through, so it counts as saved. */
   function act(fn, okText) {
     if (busy) return;
     busy = true; render();
     flash('Saving…', false, 0);
-    fn().then(function (s) { apply(s); flash(okText); if (navigator.vibrate) navigator.vibrate(30); })
-      .catch(handleErr).finally(function () { busy = false; render(); });
+    var expect = st.v, tries = 0;
+    (function attempt() {
+      fn(expect).then(function (s) { apply(s); flash(okText); if (navigator.vibrate) navigator.vibrate(30); finish(); })
+        .catch(function (err) {
+          if (err && err.code === 'BUSY' && tries < 3) {
+            tries++;
+            flash('⏳ Server busy — retrying (' + tries + '/3)…', true, 0);
+            return setTimeout(attempt, 1500 * tries);
+          }
+          if (err && err.code === 'STALE' && tries) {
+            return RavanAPI.huntState().then(function (s) {
+              apply(s);
+              flash(s.v === expect + 1 ? okText : 'Updated from another device — please check', s.v !== expect + 1);
+            }).catch(handleErr).finally(finish);
+          }
+          handleErr(err); finish();
+        });
+    })();
+    function finish() { busy = false; render(); }
   }
 
   // ---------- render ----------
@@ -65,12 +84,12 @@
       var main;
       if (!s.started) {
         main = el('button', 'btn btn-gold', '⏱ Start stopwatch');
-        main.addEventListener('click', function () { act(function () { return RavanAPI.huntStart(st.v, i); }, t.name + ' — go! ⏱'); });
+        main.addEventListener('click', function () { act(function (v) { return RavanAPI.huntStart(v, i); }, t.name + ' — go! ⏱'); });
       } else if (s.running) {
         main = el('button', 'btn', '✓ ' + s.next.name + ' found · +' + s.next.points);
         main.addEventListener('click', function () {
           var last = s.found === st.game.clues.length - 1;
-          act(function () { return RavanAPI.huntClue(st.v, i); }, last ? t.name + ' finished! 🏁' : t.name + ' ' + s.next.name + ' ✓');
+          act(function (v) { return RavanAPI.huntClue(v, i); }, last ? t.name + ' finished! 🏁' : t.name + ' ' + s.next.name + ' ✓');
         });
       } else {
         main = el('button', 'btn btn-ghost', '🏁 Finished in ' + H.clock(s.elapsed));
@@ -84,7 +103,7 @@
       undo.addEventListener('click', function () {
         var what = s.found ? H.NAMES[s.found - 1] : 'the stopwatch start';
         if (!window.confirm('Undo ' + what + ' for ' + t.name + '?')) return;
-        act(function () { return RavanAPI.huntUndo(st.v, i); }, 'Undone');
+        act(function (v) { return RavanAPI.huntUndo(v, i); }, 'Undone');
       });
       actions.appendChild(undo);
       card.appendChild(actions);
@@ -109,7 +128,7 @@
 
   $('startAll').addEventListener('click', function () {
     if (!window.confirm('Start the stopwatch for every team that has not started yet?')) return;
-    act(function () { return RavanAPI.huntStart(st.v, 'all'); }, 'All teams — go! ⏱');
+    act(function (v) { return RavanAPI.huntStart(v, 'all'); }, 'All teams — go! ⏱');
   });
   $('refreshBtn').addEventListener('click', function () { load().then(function () { flash('Up to date'); }); });
 
@@ -162,10 +181,13 @@
       .finally(function () { $('loginBtn').disabled = false; });
   });
 
-  setInterval(function () {
-    if (busy || document.hidden || !RavanAPI.dartsHasToken() || editingSetup) return;
-    RavanAPI.huntState().then(function (s) { if (!busy && s.v !== st.v) apply(s); }).catch(function () {});
-  }, 6000);
+  // background sync (second scorer / TV changes): one request at a time, every 10 s
+  (function sync() {
+    setTimeout(function () {
+      if (busy || document.hidden || !RavanAPI.dartsHasToken() || editingSetup) return sync();
+      RavanAPI.huntState().then(function (s) { if (!busy && s.v !== st.v) apply(s); }).catch(function () {}).finally(sync);
+    }, 10000);
+  })();
 
   if (RavanAPI.dartsHasToken()) load(); else views('vLogin');
 })();

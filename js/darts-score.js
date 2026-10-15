@@ -37,7 +37,7 @@
   }
   document.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('[data-hit]');
-    if (!t || busy) return;
+    if (!t || busy || t.disabled) return;
     var hit = t.getAttribute('data-hit');
     if (hit === 'MISS' || hit === 'BULL') return record(hit, '');
     picked = Number(hit);
@@ -58,6 +58,16 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('zoneSheet').hidden) closeSheet(); });
 
   // ---------- server calls ----------
+  /*
+   * Optimistic scoring: every tap is shown at once and queued; darts are sent to the
+   * server one at a time (each with the dart count it expects). If Google is slow or
+   * busy, the queue retries with backoff. A retry that finds its dart already saved
+   * (the first attempt worked but the answer was lost) is treated as success.
+   */
+  var queue = [], sending = false, retryMs = 0, retryTimer = null;
+  function pendingCount() { return queue.length; }
+  function all() { return st.throws.concat(queue); }
+
   function apply(state) {
     st = state || { game: null, throws: [] };
     render();
@@ -65,31 +75,75 @@
   function load() {
     return RavanAPI.dartsState().then(apply).catch(handleErr);
   }
-  function record(hit, zone) {
-    if (!st.game || busy) return;
-    var turn = D.turn(st.game, st.throws.length);
-    if (turn.over) return;
-    busy = true; setBusy(true);
-    var team = st.game.teams[turn.team];
-    var pts = D.points(hit, zone, st.game.bullPoints);
-    flash('Saving ' + team + ' ' + D.fmt(pts) + '…', false, 0);
-    RavanAPI.dartsThrow(st.throws.length, hit, zone).then(function (s) {
-      apply(s);
-      flash(team + ' ' + D.fmt(pts) + ' ✓');
-      if (navigator.vibrate) navigator.vibrate(30);
-    }).catch(handleErr).finally(function () { busy = false; setBusy(false); });
+  function syncNote() {
+    if (queue.length) flash('⏳ Saving ' + queue.length + ' dart' + (queue.length > 1 ? 's' : '') + (retryMs ? ' — server busy, retrying…' : '…'), !!retryMs, 0);
+    else flash('✓ All darts saved');
   }
+
+  function record(hit, zone) {
+    if (!st.game) return;
+    var turn = D.turn(st.game, all().length);
+    if (turn.over) return;
+    queue.push({ t: turn.team, h: hit, z: zone, p: D.points(hit, zone, st.game.bullPoints), pending: true });
+    if (navigator.vibrate) navigator.vibrate(30);
+    render();
+    syncNote();
+    pump();
+  }
+
+  function pump() {
+    if (sending || !queue.length || retryTimer) return;
+    sending = true;
+    var item = queue[0], expect = st.throws.length;
+    RavanAPI.dartsThrow(expect, item.h, item.z).then(function (s) {
+      st = s; queue.shift(); retryMs = 0;
+    }).catch(function (err) {
+      if (err && err.code === 'STALE') {
+        return RavanAPI.dartsState().then(function (s) {
+          var last = s.throws[s.throws.length - 1];
+          if (s.throws.length === expect + 1 && last && String(last.h) === String(item.h) && last.z === item.z) {
+            st = s; queue.shift(); retryMs = 0; // our earlier attempt did reach the server
+          } else {
+            var lost = queue.length;
+            st = s; queue = []; retryMs = 0;
+            flash('Scores changed on another device — please re-enter the last ' + lost + ' dart' + (lost > 1 ? 's' : ''), true, 5000);
+          }
+        });
+      }
+      if (err && err.code === 'AUTH') { queue = []; return handleErr(err); }
+      if (err && err.code === 'BUSY') { retryMs = Math.min(15000, retryMs ? retryMs * 2 : 1500); return; }
+      queue.shift(); retryMs = 0; // rejected (e.g. game over) — drop it and resync
+      flash((err && err.message) || 'Dart not saved', true, 3500);
+      return load();
+    }).catch(function () { retryMs = Math.min(15000, retryMs ? retryMs * 2 : 1500); })
+      .finally(function () {
+        sending = false;
+        render();
+        if (queue.length) {
+          syncNote();
+          if (retryMs) retryTimer = setTimeout(function () { retryTimer = null; pump(); }, retryMs); else pump();
+        } else if (!retryMs) syncNote();
+      });
+  }
+
   function undo() {
-    if (!st.throws.length || busy) return;
+    if (busy) return;
+    if (queue.length > (sending ? 1 : 0)) {           // not sent yet → just drop it locally
+      queue.pop(); render(); syncNote(); return;
+    }
+    if (queue.length) { flash('Saving the last dart — try Undo again in a moment'); return; }
+    if (!st.throws.length) return;
     var last = st.throws[st.throws.length - 1];
     if (!window.confirm('Undo the last dart? (' + st.game.teams[last.t] + ': ' + D.label(last) + ' ' + D.fmt(last.p) + ')')) return;
     busy = true; setBusy(true);
+    flash('Removing last dart…', false, 0);
     RavanAPI.dartsUndo(st.throws.length).then(function (s) { apply(s); flash('Last dart removed'); })
       .catch(handleErr).finally(function () { busy = false; setBusy(false); });
   }
   function setBusy(on) {
     Array.prototype.forEach.call(document.querySelectorAll('.num, #undoBtn, #overUndo'), function (b) { b.disabled = on; });
   }
+  window.addEventListener('beforeunload', function (e) { if (queue.length) { e.preventDefault(); e.returnValue = ''; } });
   $('undoBtn').addEventListener('click', undo);
   $('overUndo').addEventListener('click', undo);
   $('refreshBtn').addEventListener('click', function () { load().then(function () { flash('Up to date'); }); });
@@ -97,7 +151,7 @@
   // ---------- render ----------
   function miniBoard(target, turnTeam) {
     var box = $(target); box.textContent = '';
-    D.standings(st.game, st.throws).forEach(function (r) {
+    D.standings(st.game, all()).forEach(function (r) {
       var row = el('div', 'mini-row' + (r.index === turnTeam ? ' now' : ''));
       row.appendChild(el('span', 'rk', '#' + r.rank));
       row.appendChild(el('span', 'nm', r.name));
@@ -109,12 +163,12 @@
   function render() {
     if (!RavanAPI.dartsHasToken()) return views('vLogin');
     if (!st.game || editingSetup) { fillSetup(); return views('vSetup'); }
-    var g = st.game, turn = D.turn(g, st.throws.length);
+    var g = st.game, thrown = all(), turn = D.turn(g, thrown.length);
     if (turn.over) {
-      var top = D.standings(g, st.throws);
+      var top = D.standings(g, thrown);
       var winners = top.filter(function (r) { return r.rank === 1; });
       $('overWinner').textContent = winners.length > 1 ? 'TIE: ' + winners.map(function (w) { return w.name; }).join(' & ') : winners[0].name + ' WINS';
-      $('overNote').textContent = 'Game over · ' + g.rounds + ' rounds · ' + st.throws.length + ' darts';
+      $('overNote').textContent = 'Game over · ' + g.rounds + ' rounds · ' + thrown.length + ' darts' + (queue.length ? ' · saving…' : '');
       miniBoard('overBoard', -1);
       return views('vOver');
     }
@@ -124,12 +178,12 @@
     var dots = $('turnDots'); dots.textContent = '';
     for (var i = 1; i <= g.dartsPerTurn; i++) dots.appendChild(el('span', 'dot' + (i < turn.dart ? ' done' : i === turn.dart ? ' now' : '')));
     var tt = $('thisTurn'); tt.textContent = '';
-    var startOfTurn = st.throws.length - (turn.dart - 1);
-    st.throws.slice(startOfTurn).forEach(function (t) {
-      tt.appendChild(el('span', 'pill ' + cls(t.p), D.label(t).replace(' · ', ' ') + ' ' + D.fmt(t.p)));
+    var startOfTurn = thrown.length - (turn.dart - 1);
+    thrown.slice(startOfTurn).forEach(function (t) {
+      tt.appendChild(el('span', 'pill ' + cls(t.p) + (t.pending ? ' pending' : ''), D.label(t).replace(' · ', ' ') + ' ' + D.fmt(t.p) + (t.pending ? ' ⏳' : '')));
     });
     if (!tt.childNodes.length) tt.appendChild(el('span', 'note', 'First dart of this turn'));
-    $('undoBtn').disabled = !st.throws.length;
+    $('undoBtn').disabled = !thrown.length;
     miniBoard('miniBoard', turn.team);
   }
 
@@ -155,13 +209,15 @@
       .catch(function (err) { if (err.code === 'AUTH') return handleErr(err); $('setupMsg').textContent = err.message; $('setupMsg').hidden = false; })
       .finally(function () { $('startBtn').disabled = false; });
   });
-  function openSetup() { editingSetup = true; setupLoaded = false; render(); window.scrollTo(0, 0); }
+  function openSetup() {
+    if (queue.length) { flash('Wait — darts are still saving', true); return; } editingSetup = true; setupLoaded = false; render(); window.scrollTo(0, 0); }
   $('newGameBtn').addEventListener('click', openSetup);
   $('overNew').addEventListener('click', openSetup);
   $('cancelSetup').addEventListener('click', function () { editingSetup = false; render(); });
 
   // ---------- testing reset (only this game's tab) ----------
   $('resetBtn').addEventListener('click', function () {
+    if (queue.length) { flash('Wait — darts are still saving', true); return; }
     var typed = window.prompt('Type RESET to wipe the darts board (current game and history). Ravan Box chits are not affected.');
     if (typed === null) return;
     if (typed.trim().toUpperCase() !== 'RESET') { flash('Not reset — type RESET exactly', true); return; }
@@ -185,9 +241,15 @@
   });
 
   // keep in sync if a second scorer is used
-  setInterval(function () { if (!busy && !document.hidden && RavanAPI.dartsHasToken() && $('zoneSheet').hidden) RavanAPI.dartsState().then(function (s) {
-    if (!busy && (!st.updatedAt || s.updatedAt !== st.updatedAt)) apply(s);
-  }).catch(function () {}); }, 6000);
+  // background sync (only matters with a second scorer): one request at a time, every 10 s
+  (function sync() {
+    setTimeout(function () {
+      if (busy || document.hidden || !RavanAPI.dartsHasToken() || !$('zoneSheet').hidden || pendingCount()) return sync();
+      RavanAPI.dartsState().then(function (s) {
+        if (!busy && !pendingCount() && (!st.updatedAt || s.updatedAt !== st.updatedAt)) apply(s);
+      }).catch(function () {}).finally(sync);
+    }, 10000);
+  })();
 
   if (RavanAPI.dartsHasToken()) load(); else views('vLogin');
 })();

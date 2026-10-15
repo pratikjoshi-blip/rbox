@@ -240,3 +240,4 @@ body.tv { background: #0c0306; }
   .wheel-zone { width: min(92vw, 60vh); }
   .order-list li { grid-template-columns: 40px 1fr; }
 }
+.pill.pending { opacity: 0.7; border-style: dashed; }

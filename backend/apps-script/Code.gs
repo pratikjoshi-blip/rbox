@@ -56,12 +56,13 @@ var DEMO = [
  * was created on its own at script.google.com, set Script Property SPREADSHEET_ID to
  * the long id in the sheet's URL: docs.google.com/spreadsheets/d/<SPREADSHEET_ID>/edit
  */
+var SS_ = null; // opened once per request
 function ss_() {
+  if (SS_) return SS_;
   var id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
-  if (id) return SpreadsheetApp.openById(id.trim());
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  if (!ss) fail_('CONFIG', 'No spreadsheet: attach this script to a Google Sheet or set the SPREADSHEET_ID script property.');
-  return ss;
+  SS_ = id ? SpreadsheetApp.openById(id.trim()) : SpreadsheetApp.getActiveSpreadsheet();
+  if (!SS_) fail_('CONFIG', 'No spreadsheet: attach this script to a Google Sheet or set the SPREADSHEET_ID script property.');
+  return SS_;
 }
 
 /** Run from the editor to print the link of the sheet this backend writes to. */
@@ -257,7 +258,7 @@ function jsonWrite_(name, cacheKey, st) {
   st.updatedAt = new Date().toISOString();
   var json = JSON.stringify(st);
   if (json.length > 45000) fail_('INVALID', 'Game is too long — start a new game.');
-  jsonSheet_(name).getRange('A1').setNumberFormat('@').setValue(json);
+  jsonSheet_(name).getRange('A1').setValue(json); // a JSON object string is always stored as text
   CacheService.getScriptCache().put(cacheKey, json, 21600);
   return st;
 }
@@ -300,7 +301,6 @@ function darts_(action, body) {
   requireDarts_(body.token);
 
   return withLock_(function () {
-    CacheService.getScriptCache().remove(DARTS_CACHE); // always read the sheet inside the lock
     var st = dartsRead_();
 
     if (action === 'dartsNewGame') {
@@ -371,7 +371,6 @@ function hunt_(action, body) {
   requireDarts_(body.token); // same scorer PIN as darts
 
   return withLock_(function () {
-    CacheService.getScriptCache().remove(HUNT_CACHE);
     var st = huntRead_();
     var nowIso = new Date().toISOString();
     var done = function () { st.v = (st.v || 0) + 1; var out = jsonWrite_(HUNT_SHEET, HUNT_CACHE, st); out.now = nowIso; return out; };
@@ -450,7 +449,6 @@ function teams_(action, body) {
   if (action === 'teamsList') return teamsRead_();
   requireDarts_(body.token);
   return withLock_(function () {
-    CacheService.getScriptCache().remove(TEAMS_CACHE);
     var st = teamsRead_();
     // test reset: wipes ONLY the Teams tab
     if (action === 'teamsReset') {

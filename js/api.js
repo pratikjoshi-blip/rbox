@@ -10,28 +10,65 @@
     return cfg.API_URL && cfg.API_URL.trim() ? cfg.API_URL.trim() : '';
   }
 
-  function call(action, payload) {
-    var body = Object.assign({ action: action, eventId: cfg.EVENT_ID }, payload || {});
-    // No API_URL → in-browser local mode (js/local-backend.js)
-    if (!endpoint()) return window.RavanLocalBackend.call(body);
+  /*
+   * Google Apps Script sometimes queues requests for many seconds or answers with an
+   * HTML "busy" page when too many arrive at once. So every request has a timeout,
+   * a non-JSON answer becomes a BUSY error, read-only calls retry with backoff, and
+   * identical reads already in flight are shared instead of sent twice.
+   */
+  var READS = { status: 1, list: 1, dartsState: 1, huntState: 1, teamsList: 1 };
+  var inflight = {};
+
+  function busyError(msg) { var e = new Error(msg || 'The server is busy — please try again in a moment.'); e.code = 'BUSY'; return e; }
+
+  function send(body, timeoutMs) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
     return fetch(endpoint(), {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
-      redirect: 'follow'
+      redirect: 'follow',
+      signal: ctrl ? ctrl.signal : undefined
     })
       .then(function (res) {
-        if (!res.ok) throw new Error('Network error (' + res.status + ')');
-        return res.json();
+        if (!res.ok) throw busyError('Server error (' + res.status + ') — please try again.');
+        return res.text();
       })
-      .then(function (json) {
+      .then(function (text) {
+        var json;
+        try { json = JSON.parse(text); } catch (e) { throw busyError(); } // Google's HTML error/busy page
         if (!json || json.ok !== true) {
           var err = new Error((json && json.error) || 'Request failed');
           err.code = json && json.code;
           throw err;
         }
         return json.data;
+      }, function (err) {
+        if (err && err.code) throw err;
+        throw busyError(err && err.name === 'AbortError' ? 'The server is slow right now — please try again.' : 'Could not reach the server. Check your connection.');
+      })
+      .finally(function () { if (timer) clearTimeout(timer); });
+  }
+
+  function call(action, payload) {
+    var body = Object.assign({ action: action, eventId: cfg.EVENT_ID }, payload || {});
+    // No API_URL → in-browser local mode (js/local-backend.js)
+    if (!endpoint()) return window.RavanLocalBackend.call(body);
+    if (!READS[action]) return send(body, 30000); // writes: one attempt (the caller decides what to retry)
+
+    var key = JSON.stringify(body);
+    if (inflight[key]) return inflight[key];
+    var attempt = 0;
+    var run = function () {
+      return send(body, 20000).catch(function (err) {
+        if (err.code !== 'BUSY' || attempt >= 2) throw err;
+        attempt++;
+        return new Promise(function (r) { setTimeout(r, 1200 * attempt + Math.random() * 600); }).then(run);
       });
+    };
+    inflight[key] = run().finally(function () { delete inflight[key]; });
+    return inflight[key];
   }
 
   function token() {

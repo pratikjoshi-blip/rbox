@@ -3,7 +3,8 @@
   var $ = function (id) { return document.getElementById(id); };
   var D = window.RavanDarts;
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var POLL_MS = 2500;
+  // poll ~every 3 s during play, every 12 s when there is no game or it is over (keeps Google from throttling)
+  var POLL_LIVE = 3000, POLL_IDLE = 12000, pollMs = POLL_LIVE;
   var fire = new FireStage($('fireCanvas'));
   var last = { key: '', count: -1, gameId: '', over: false };
   var failures = 0;
@@ -109,15 +110,16 @@
   }
 
   function tick() {
-    if (document.hidden) return setTimeout(tick, POLL_MS);
+    if (document.hidden) return setTimeout(tick, POLL_IDLE);
     RavanAPI.dartsState().then(function (st) {
       failures = 0;
       $('liveDot').classList.remove('off'); $('liveText').textContent = 'Live';
       render(st || { game: null, throws: [] });
+      pollMs = st && st.game && !RavanDarts.turn(st.game, st.throws.length).over ? POLL_LIVE : POLL_IDLE;
     }).catch(function () {
       failures++;
       if (failures >= 2) { $('liveDot').classList.add('off'); $('liveText').textContent = 'Reconnecting…'; }
-    }).finally(function () { setTimeout(tick, POLL_MS); });
+    }).finally(function () { setTimeout(tick, failures ? Math.min(20000, POLL_LIVE * (1 + failures)) : pollMs); });
   }
   tick();
 

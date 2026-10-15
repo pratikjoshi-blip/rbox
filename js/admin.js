@@ -58,7 +58,12 @@
     $('dashView').hidden = false;
     refresh();
     clearInterval(pollTimer);
-    pollTimer = setInterval(function () { if (!document.hidden) refresh(true); }, 30000);
+    var refreshing = false;
+    pollTimer = setInterval(function () {
+      if (document.hidden || refreshing) return;
+      refreshing = true;
+      refresh(true).finally(function () { refreshing = false; });
+    }, 30000);
   }
 
   $('loginForm').addEventListener('submit', function (e) {
